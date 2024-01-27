@@ -46,7 +46,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   nextHandler: {fileID: 8017436843816505862}
   blockType: {fileID: 11400000, guid: e5809b7fc6d2380469dd5fd3fc859f38, type: 2}
-  layerThickness: 10
+  layerThickness: 0
 --- !u!1 &8017436843608992894
 GameObject:
   m_ObjectHideFlags: 0
@@ -267,11 +267,11 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 8017436843883334634}
-  - {fileID: 8017436843816505857}
   - {fileID: 8017436844019048945}
-  - {fileID: 8017436843608992888}
   - {fileID: 8017436842995252956}
+  - {fileID: 8017436843816505857}
+  - {fileID: 8017436843608992888}
+  - {fileID: 8017436843883334634}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &8017436844275133676
