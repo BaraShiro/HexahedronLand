@@ -1,0 +1,315 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &8017436842995252957
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8017436842995252956}
+  - component: {fileID: 8017436842995252959}
+  m_Layer: 0
+  m_Name: ParentrockLayerHandler
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8017436842995252956
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8017436842995252957}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8017436844275133458}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8017436842995252959
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8017436842995252957}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3535e80f68e648bea1f38bc8376bc0bf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  nextHandler: {fileID: 8017436843816505862}
+  blockType: {fileID: 11400000, guid: e596d8ed2c16d054f81b0df5dc035c06, type: 2}
+  layerThickness: 2
+--- !u!1 &8017436843608992894
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8017436843608992888}
+  - component: {fileID: 8017436843608992889}
+  m_Layer: 0
+  m_Name: TopsoilLayerHandler
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8017436843608992888
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8017436843608992894}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8017436844275133458}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8017436843608992889
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8017436843608992894}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 986a0088e2e042b9a70493cefe5c7fd0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  nextHandler: {fileID: 8017436843883334635}
+  blockType: {fileID: 11400000, guid: be6a73f726b076f4ba0d722851ae32d3, type: 2}
+  surfaceNoiseSettings: {fileID: 11400000, guid: 1e087b89d75cdd64585c4f8e4a1ddb8d, type: 2}
+  surfaceBiomeGenerator: {fileID: 8017436844275133676}
+  treeLayerDensity: 0.1
+  shrubLayerDensity: 0.1
+  herbLayerDensity: 0.2
+--- !u!1 &8017436843816505863
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8017436843816505857}
+  - component: {fileID: 8017436843816505862}
+  m_Layer: 0
+  m_Name: SubsoilLayerHandler
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8017436843816505857
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8017436843816505863}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8017436844275133458}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8017436843816505862
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8017436843816505863}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f3b24c9c4c223c04d9558e0eb9086bbf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  nextHandler: {fileID: 8017436843608992889}
+  blockType: {fileID: 11400000, guid: be6a73f726b076f4ba0d722851ae32d3, type: 2}
+--- !u!1 &8017436843883334632
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8017436843883334634}
+  - component: {fileID: 8017436843883334635}
+  m_Layer: 0
+  m_Name: AirLayerHandler
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8017436843883334634
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8017436843883334632}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8017436844275133458}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8017436843883334635
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8017436843883334632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3ff285de3a63c04fafdc4e081448481, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  nextHandler: {fileID: 0}
+  blockType: {fileID: 11400000, guid: ec0f9f595d104d8408a4c99e0f6929ed, type: 2}
+--- !u!1 &8017436844019048950
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8017436844019048945}
+  - component: {fileID: 8017436844019048944}
+  m_Layer: 0
+  m_Name: BedrockLayerHandler
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8017436844019048945
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8017436844019048950}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8017436844275133458}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8017436844019048944
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8017436844019048950}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a327e75ad7d3a143b8ab7b1613643c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  nextHandler: {fileID: 8017436842995252959}
+  blockType: {fileID: 11400000, guid: e5b263b0bfa12e24da85fb414b01e5f9, type: 2}
+--- !u!1 &8017436844275133459
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8017436844275133458}
+  - component: {fileID: 8017436844275133676}
+  - component: {fileID: 8017436844275133677}
+  m_Layer: 0
+  m_Name: SemiAridDesert
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8017436844275133458
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8017436844275133459}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 8017436843883334634}
+  - {fileID: 8017436843816505857}
+  - {fileID: 8017436844019048945}
+  - {fileID: 8017436843608992888}
+  - {fileID: 8017436842995252956}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8017436844275133676
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8017436844275133459}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9223fc42ef185f04fbf78cf5b02ce131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  biomeName: SemiAridDesert
+  biomeNoiseSettings: {fileID: 11400000, guid: d174fa8244b84704e8a96e3f5b66f9c8, type: 2}
+  initialLayerHandler: {fileID: 8017436844019048944}
+  fallbackLayerHandler: {fileID: 7044425124487295964, guid: 7b3bf2406c2b0ad44811a7b73b6b142b, type: 3}
+  useDomainWarping: 0
+  domainWarping: {fileID: 8017436844275133677}
+  vegetation: {fileID: 11400000, guid: ea248bc40e06e0344923ff40644f6871, type: 2}
+  rockMinHeight: 1
+  rockMaxHeight: 5
+  dirtMinHeight: 1
+  dirtMaxHeight: 3
+--- !u!114 &8017436844275133677
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8017436844275133459}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b461ac24b4fc90d43a7c36b57ff88b77, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  noiseDomainX: {fileID: 11400000, guid: daa2d52d1dde04b4aa3f5d64338e79ce, type: 2}
+  noiseDomainZ: {fileID: 11400000, guid: 5d96964706c6cbf4c8ae82715a5bb4b0, type: 2}
+  amplitudeX: 20
+  amplitudeZ: 20

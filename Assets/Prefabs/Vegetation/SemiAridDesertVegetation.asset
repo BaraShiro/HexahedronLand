@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 758549dc0b32f0346a9284591f327b5f, type: 3}
+  m_Name: SemiAridDesertVegetation
+  m_EditorClassIdentifier: 
+  treeLayer:
+  - {fileID: 7484264926799204671, guid: 395fbe86e24f1f14a9e5614b6f5fb9f7, type: 3}
+  shrubLayer: []
+  herbLayer:
+  - {fileID: -8462498996013878169, guid: 76668c31da5c8fa40b584c97f82fb98a, type: 3}

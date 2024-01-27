@@ -10,28 +10,28 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2e193b2d188511a49b54019b39ee4742, type: 3}
-  m_Name: StoneBlock
+  m_Name: WaterBlock
   m_EditorClassIdentifier: 
-  blockTypeName: Stone
+  blockTypeName: Water
   blockData:
     northTexturePosition:
-      x: 0
-      y: 1
+      x: 2
+      y: 4
     eastTexturePosition:
-      x: 0
-      y: 1
+      x: 2
+      y: 4
     southTexturePosition:
-      x: 0
-      y: 1
+      x: 2
+      y: 4
     westTexturePosition:
-      x: 0
-      y: 1
+      x: 2
+      y: 4
     upTexturePosition:
-      x: 0
-      y: 1
+      x: 2
+      y: 4
     downTexturePosition:
-      x: 0
-      y: 1
+      x: 2
+      y: 4
     northIsSolid: 1
     eastIsSolid: 1
     southIsSolid: 1

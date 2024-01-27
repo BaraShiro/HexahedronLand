@@ -10,28 +10,28 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2e193b2d188511a49b54019b39ee4742, type: 3}
-  m_Name: StoneBlock
+  m_Name: DryGrassDirtBlock
   m_EditorClassIdentifier: 
-  blockTypeName: Stone
+  blockTypeName: DryGrassDirt
   blockData:
     northTexturePosition:
-      x: 0
-      y: 1
+      x: 6
+      y: 0
     eastTexturePosition:
-      x: 0
-      y: 1
+      x: 6
+      y: 0
     southTexturePosition:
-      x: 0
-      y: 1
+      x: 6
+      y: 0
     westTexturePosition:
-      x: 0
-      y: 1
+      x: 6
+      y: 0
     upTexturePosition:
-      x: 0
-      y: 1
+      x: 7
+      y: 0
     downTexturePosition:
-      x: 0
-      y: 1
+      x: 1
+      y: 0
     northIsSolid: 1
     eastIsSolid: 1
     southIsSolid: 1
@@ -40,6 +40,6 @@ MonoBehaviour:
     downIsSolid: 1
     hasCollision: 1
     maxHealth: 1
-    replacementBlock: {fileID: 11400000, guid: ec0f9f595d104d8408a4c99e0f6929ed, type: 2}
+    replacementBlock: {fileID: 11400000, guid: d637b2c4e28466b4f9a5b8d83c5ef3f9, type: 2}
     resource: 
     resourceAmount: 0
