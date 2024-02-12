@@ -95,9 +95,9 @@ MonoBehaviour:
   blockType: {fileID: 11400000, guid: 68ad6e2c93a748844ad5a6de166bbf3b, type: 2}
   surfaceNoiseSettings: {fileID: 11400000, guid: f6d29ba9e59030c49a84b6014e085b79, type: 2}
   surfaceBiomeGenerator: {fileID: 8017436844275133676}
-  treeLayerDensity: 0.05
-  shrubLayerDensity: 0.1
-  herbLayerDensity: 0.2
+  treeLayerDensity: 0.113
+  shrubLayerDensity: 0.161
+  herbLayerDensity: 0.256
 --- !u!1 &8017436843816505863
 GameObject:
   m_ObjectHideFlags: 0

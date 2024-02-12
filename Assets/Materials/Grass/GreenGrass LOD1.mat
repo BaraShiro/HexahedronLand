@@ -9,18 +9,20 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: GreenGrass LOD1
   m_Shader: {fileID: 14002, guid: 0000000000000000f000000000000000, type: 0}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
-  - EFFECT_HUE_VARIATION
-  - _WINDQUALITY_NONE
+  - _WINDQUALITY_FAST
   m_InvalidKeywords:
   - _ALPHABLEND_ON
   - _FADING_ON
   m_LightmapFlags: 0
   m_EnableInstancingVariants: 1
-  m_DoubleSidedGI: 1
+  m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -49,7 +51,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 6533a2c6c5b8e50418e2b691afb368b8, type: 3}
+        m_Texture: {fileID: 2800000, guid: 04747f25f967cb04cbdee2955238c20f, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -90,7 +92,7 @@ Material:
     - _GlossMapScale: 1
     - _Glossiness: 0
     - _GlossyReflections: 1
-    - _HueVariationKwToggle: 1
+    - _HueVariationKwToggle: 0
     - _LightingEnabled: 1
     - _Metallic: 0
     - _Mode: 2
@@ -110,7 +112,7 @@ Material:
     - _TranslucencyViewDependency: 0.7
     - _TwoSided: 0
     - _UVSec: 0
-    - _WindQuality: 0
+    - _WindQuality: 2
     - _ZWrite: 0
     m_Colors:
     - _CameraFadeParams: {r: 1, g: 2, b: 0, a: 0}
@@ -124,3 +126,4 @@ Material:
     - _TreeInstanceColor: {r: 1, g: 1, b: 1, a: 1}
     - _TreeInstanceScale: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1
