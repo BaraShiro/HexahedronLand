@@ -1,12 +1,11 @@
-using System;
 using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.Collections;
 using Unity.Mathematics;
+using Debug = UnityEngine.Debug;
 
 public class LandscapeGenerator : MonoBehaviour
 {
@@ -122,11 +121,25 @@ public class LandscapeGenerator : MonoBehaviour
 
         Parallel.For(chunkData.worldPosition.x,chunkData.worldPosition.x + Chunk.ChunkData.ChunkSize, parallelOptions, (x) =>
         {
+            Stopwatch stopwatch = new Stopwatch();
             for (int z = chunkData.worldPosition.z; z < chunkData.worldPosition.z + Chunk.ChunkData.ChunkSize; z++)
             {
+                stopwatch.Restart();
+                
                 SelectBiome(new Vector2Int(x, z), out SurfaceBiomeGenerator biomeGenerator, out int rockHeight, out int dirtHeight);
-                chunkData = biomeGenerator.GenerateChunkColumn(chunkData, x, z, rockHeight, dirtHeight);
+                
+                stopwatch.Stop();
+                long select = stopwatch.ElapsedTicks;
 
+                stopwatch.Restart();
+                
+                chunkData = biomeGenerator.GenerateChunkColumn(chunkData, x, z, rockHeight, dirtHeight);
+                
+                stopwatch.Stop();
+                long handle = stopwatch.ElapsedTicks;
+                
+                WorldGenerationLogger.SelectBiomeTicks.Add(select);
+                WorldGenerationLogger.HandleLayerTicks.Add(handle);
             }
             
         });

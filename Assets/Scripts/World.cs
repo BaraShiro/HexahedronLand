@@ -371,7 +371,7 @@ public class World : SingletonMonoBehaviour<World>
         
         try
         {
-            WorldGenerationStepHandler($"Calculation world generation data...");
+            WorldGenerationStepHandler($"Calculating world generation data...");
             stopwatch.Restart();
             worldGenerationData = await GenerateWorldGenerationDataAsync(generateAround, radius, parallelizationUtils.taskCancellationToken);
             stopwatch.Stop();
@@ -405,10 +405,13 @@ public class World : SingletonMonoBehaviour<World>
         try
         {
             WorldGenerationStepHandler($"Generating chunk data...");
+            WorldGenerationLogger.ClearChunkGenerationDetails();
             stopwatch.Restart();
             chunkDataDictionary = await GenerateChunkDataParallelAsync(worldGenerationData.chunkDataPositionsToCreate);
             stopwatch.Stop();
-            WorldGenerationStepHandler($"Generated {worldGenerationData.chunkDataPositionsToCreate.Count} chunks in {stopwatch.ElapsedMilliseconds} ms");
+            WorldGenerationStepHandler($"Generated {worldGenerationData.chunkDataPositionsToCreate.Count} chunks in {stopwatch.ElapsedMilliseconds} ms\n" +
+                                       $"Time spent in SelectBiome: {WorldGenerationLogger.GetSelectBiomeDetails}\n" +
+                                       $"Time spent in HandleLayer: {WorldGenerationLogger.GetHandleLayerDetails}");
         }
         catch (OperationCanceledException)
         {
