@@ -182,10 +182,7 @@ public class LandscapeGenerator : MonoBehaviour
       return ref biomeClimateData.GetBiome(biomeData.precipitation, biomeData.temperature);
     }
 
-    
-    
-    //----------------------------------------------------------------------------
-
+    #region BiomeCenters
 
     public static Vector2Int BiomePosition(Vector3Int worldPosition)
     {
@@ -240,6 +237,8 @@ public class LandscapeGenerator : MonoBehaviour
 
         return centerPoints;
     }
+
+    #endregion
 
 #if UNITY_EDITOR
     private void OnDrawGizmos()
