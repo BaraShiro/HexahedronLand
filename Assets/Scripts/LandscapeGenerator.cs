@@ -50,7 +50,7 @@ public class LandscapeGenerator : MonoBehaviour
     [SerializeReference] private BiomeClimateData biomeClimateData = new BiomeClimateData(1,1);
     public bool useDomainWarping = true;
 
-    public const int BiomeSize = 8 * Chunk.ChunkData.ChunkSize;
+    public const int BiomeSize = 8 * Chunk.ChunkData.ChunkHorizontalSize;
 
     private Vector2Int currentBiomePosition = Vector2Int.zero;
     private List<Vector2Int> biomeCenterPoints = new List<Vector2Int>();
@@ -119,10 +119,10 @@ public class LandscapeGenerator : MonoBehaviour
     {
         //TODO: check if chunk is underground and use underground generator if it is
 
-        Parallel.For(chunkData.worldPosition.x,chunkData.worldPosition.x + Chunk.ChunkData.ChunkSize, parallelOptions, (x) =>
+        Parallel.For(chunkData.worldPosition.x,chunkData.worldPosition.x + Chunk.ChunkData.ChunkHorizontalSize, parallelOptions, (x) =>
         {
             Stopwatch stopwatch = new Stopwatch();
-            for (int z = chunkData.worldPosition.z; z < chunkData.worldPosition.z + Chunk.ChunkData.ChunkSize; z++)
+            for (int z = chunkData.worldPosition.z; z < chunkData.worldPosition.z + Chunk.ChunkData.ChunkHorizontalSize; z++)
             {
                 stopwatch.Restart();
                 

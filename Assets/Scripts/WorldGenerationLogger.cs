@@ -10,8 +10,8 @@ public static class WorldGenerationLogger
     public static readonly ConcurrentBag<long> SelectBiomeTicks = new ConcurrentBag<long>();
     public static readonly ConcurrentBag<long> HandleLayerTicks = new ConcurrentBag<long>();
     
-    public static string GetSelectBiomeDetails => $"Count: {SelectBiomeTicks.Count} Sum: {SelectBiomeTicks.Sum()} Average: {SelectBiomeTicks.Average()}";
-    public static string GetHandleLayerDetails => $"Count: {HandleLayerTicks.Count} Sum: {HandleLayerTicks.Sum()} Average: {HandleLayerTicks.Average()}";
+    public static string GetSelectBiomeDetails => $"Count: {SelectBiomeTicks.Count} Sum: {SelectBiomeTicks.Sum()} Average: {(SelectBiomeTicks.IsEmpty ? 0.0 : SelectBiomeTicks.Average())}";
+    public static string GetHandleLayerDetails => $"Count: {HandleLayerTicks.Count} Sum: {HandleLayerTicks.Sum()} Average: {(HandleLayerTicks.IsEmpty ? 0.0 : HandleLayerTicks.Average())}";
     
     private static readonly ConcurrentQueue<string> Log = new ConcurrentQueue<string>();
 

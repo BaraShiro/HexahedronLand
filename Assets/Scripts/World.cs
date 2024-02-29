@@ -111,7 +111,7 @@ public class World : SingletonMonoBehaviour<World>
         {
             // Add one to compensate for rounding
             int capacity1D = (radius * 2) + 1;
-            int capacity3D = (int)(capacity1D * capacity1D * capacity1D * 0.55f);
+            int capacity3D = (int)(capacity1D * capacity1D * capacity1D * 0.55f); // TODO: Take ChunkVerticalSize into account
             return capacity3D;
         }
 
@@ -126,16 +126,16 @@ public class World : SingletonMonoBehaviour<World>
             for (int x = -radius; x <= radius; x++)
             {   
                 // Generate less vertically as it is less visible
-                for (int y = -(radius / 2); y <= (radius / 2); y++) 
+                for (int y = -1; y <= 1; y++) // TODO: Calculate correct value instead of hard coding
                 {
                     for (int z = -radius; z <= radius; z++)
                     {
                         Vector3Int position = new Vector3Int(
-                            center.x + (x * ChunkSize), 
-                            center.y + (y * ChunkSize),
-                            center.z + (z * ChunkSize));
+                            center.x + (x * ChunkHorizontalSize), 
+                            center.y + (y * ChunkVerticalSize),
+                            center.z + (z * ChunkHorizontalSize));
                         float priority = Vector3Int.Distance(center, position);
-                        if (!worldData.chunkDictionary.ContainsKey(position) && priority <= radius * ChunkSize)
+                        if (!worldData.chunkDictionary.ContainsKey(position) && priority <= radius * ChunkHorizontalSize)
                         {
                             priorities.Add(new PrioritizedPosition(position, priority));
                             positions.Add(position);
@@ -158,15 +158,15 @@ public class World : SingletonMonoBehaviour<World>
             {   
                 // Generate less vertically as it is less visible
                 // Add one to radius to compensate for integer division
-                for (int y = -((radius / 2) + 1); y <= ((radius / 2) + 1); y++)
+                for (int y = -2; y <= 2; y++) // TODO: Calculate correct value instead of hard coding
                 {
                     for (int z = -radius; z <= radius; z++)
                     {
                         Vector3Int position = new Vector3Int(
-                            center.x + (x * ChunkSize), 
-                            center.y + (y * ChunkSize),
-                            center.z + (z * ChunkSize));
-                        if (!worldData.chunkDataDictionary.ContainsKey(position) && Vector3Int.Distance(center, position) <= radius * ChunkSize)
+                            center.x + (x * ChunkHorizontalSize), 
+                            center.y + (y * ChunkVerticalSize),
+                            center.z + (z * ChunkHorizontalSize));
+                        if (!worldData.chunkDataDictionary.ContainsKey(position) && Vector3Int.Distance(center, position) <= radius * ChunkHorizontalSize)
                         {
                             dataPositions.Add(position);
                         }
@@ -183,7 +183,7 @@ public class World : SingletonMonoBehaviour<World>
             int capacity = CalculateCapacity(radius);
             chunkPositions = new List<Vector3Int>(capacity);
             chunkDataPositions = new List<Vector3Int>(capacity);
-            radius *= ChunkSize;
+            radius *= ChunkHorizontalSize;
 
             foreach (Vector3Int position in worldData.chunkDictionary.Keys)
             {
@@ -195,7 +195,7 @@ public class World : SingletonMonoBehaviour<World>
 
             foreach (Vector3Int position in worldData.chunkDataDictionary.Keys)
             {
-                if (Vector3Int.Distance(center, position) > radius + ChunkSize)
+                if (Vector3Int.Distance(center, position) > radius + ChunkHorizontalSize)
                 {
                     chunkDataPositions.Add(position);
                 }
@@ -295,12 +295,12 @@ public class World : SingletonMonoBehaviour<World>
         if (player) // TODO: use event
         {
             Vector3 position = player.GetPlayerPosition();
-            if (Vector3.Distance(lastUpdatedPosition, position) > ChunkSize)
+            if (Vector3.Distance(lastUpdatedPosition, position) > ChunkHorizontalSize)
             {
                 Vector3Int playerPos = new Vector3Int(
-                    Mathf.FloorToInt(position.x / ChunkSize) * ChunkSize,
-                    Mathf.FloorToInt(position.y / ChunkSize) * ChunkSize,
-                    Mathf.FloorToInt(position.z / ChunkSize) * ChunkSize
+                    Mathf.FloorToInt(position.x / ChunkHorizontalSize) * ChunkHorizontalSize,
+                    Mathf.FloorToInt(position.y / ChunkHorizontalSize) * ChunkHorizontalSize,
+                    Mathf.FloorToInt(position.z / ChunkHorizontalSize) * ChunkHorizontalSize
                 );
 
                 UpdateWorld(playerPos);
@@ -539,26 +539,28 @@ public class World : SingletonMonoBehaviour<World>
         }
     }
 
-    private Chunk GetChunk(Vector3Int chunkPos)
+    private Chunk GetChunk(Vector3Int blockPos)
     {
-        const float multiple = ChunkSize;
-        chunkPos.x = Mathf.FloorToInt(chunkPos.x / multiple ) * ChunkSize;
-        chunkPos.y = Mathf.FloorToInt(chunkPos.y / multiple ) * ChunkSize;
-        chunkPos.z = Mathf.FloorToInt(chunkPos.z / multiple ) * ChunkSize;
+        const float multipleH = ChunkHorizontalSize;
+        const float multipleV = ChunkHorizontalSize;
+        blockPos.x = Mathf.FloorToInt(blockPos.x / multipleH ) * ChunkHorizontalSize;
+        blockPos.y = Mathf.FloorToInt(blockPos.y / multipleV ) * ChunkVerticalSize;
+        blockPos.z = Mathf.FloorToInt(blockPos.z / multipleH ) * ChunkHorizontalSize;
 
-        worldData.chunkDictionary.TryGetValue(chunkPos, out Chunk chunk);
+        worldData.chunkDictionary.TryGetValue(blockPos, out Chunk chunk);
   
         return chunk;
     }
 
-    private ChunkData GetChunkData(Vector3Int chunkPos)
+    private ChunkData GetChunkData(Vector3Int blockPos)
     {
-        const float multiple = ChunkSize;
-        chunkPos.x = Mathf.FloorToInt(chunkPos.x / multiple ) * ChunkSize;
-        chunkPos.y = Mathf.FloorToInt(chunkPos.y / multiple ) * ChunkSize;
-        chunkPos.z = Mathf.FloorToInt(chunkPos.z / multiple ) * ChunkSize;
+        const float multipleH = ChunkHorizontalSize;
+        const float multipleV = ChunkVerticalSize;
+        blockPos.x = Mathf.FloorToInt(blockPos.x / multipleH ) * ChunkHorizontalSize;
+        blockPos.y = Mathf.FloorToInt(blockPos.y / multipleV ) * ChunkVerticalSize;
+        blockPos.z = Mathf.FloorToInt(blockPos.z / multipleH ) * ChunkHorizontalSize;
 
-        worldData.chunkDataDictionary.TryGetValue(chunkPos, out ChunkData chunkData);
+        worldData.chunkDataDictionary.TryGetValue(blockPos, out ChunkData chunkData);
   
         return chunkData;
     }
@@ -601,7 +603,7 @@ public class World : SingletonMonoBehaviour<World>
             {
                 UpdateNeighbouringChunk(worldPosition + Vector3Int.left);
             }
-            else if (localPosition.x is ChunkSize - 1)
+            else if (localPosition.x is ChunkHorizontalSize - 1)
             {
                 UpdateNeighbouringChunk(worldPosition + Vector3Int.right);
             }
@@ -610,7 +612,7 @@ public class World : SingletonMonoBehaviour<World>
             {
                 UpdateNeighbouringChunk(worldPosition + Vector3Int.down);
             }
-            else if (localPosition.y is ChunkSize - 1)
+            else if (localPosition.y is ChunkVerticalSize - 1)
             {
                 UpdateNeighbouringChunk(worldPosition + Vector3Int.up);
             }
@@ -619,7 +621,7 @@ public class World : SingletonMonoBehaviour<World>
             {
                 UpdateNeighbouringChunk(worldPosition + Vector3Int.back);
             }
-            else if (localPosition.z is ChunkSize - 1)
+            else if (localPosition.z is ChunkHorizontalSize - 1)
             {
                 UpdateNeighbouringChunk(worldPosition + Vector3Int.forward);
             }
