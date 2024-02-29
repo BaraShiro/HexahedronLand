@@ -10,11 +10,12 @@ public class Chunk : MonoBehaviour
 {
     public class ChunkData
     {
-        public Block[,,] blocks = new Block[ChunkHorizontalSize, ChunkVerticalSize, ChunkHorizontalSize];
         public const int ChunkHorizontalSize = 16;
         public const int ChunkVerticalSize = 64;
-        public World world;
-        public Vector3Int worldPosition;
+        
+        public readonly Block[,,] blocks = new Block[ChunkHorizontalSize, ChunkVerticalSize, ChunkHorizontalSize];
+        public readonly World world;
+        public readonly Vector3Int worldPosition;
         public ChunkData(World world, Vector3Int worldPosition)
         {
             this.world = world;
@@ -22,8 +23,8 @@ public class Chunk : MonoBehaviour
         }
     }
     
-    public const float tileSize = 0.125f; // TODO: Make changeable in inspector somehow
-    public const float offset = 0.001f; // Compensate for floating point rounding errors
+    public const float TileSize = 0.125f; // TODO: Make changeable in inspector somehow
+    public const float Offset = 0.001f; // Compensate for floating point rounding errors
 
     public ChunkData Data { get; private set; }
     
@@ -82,7 +83,7 @@ public class Chunk : MonoBehaviour
     #region Static functions
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void IterateOverBlocks(ChunkData data, Action<int, int, int> action)
+    public static void IterateOverBlockPositions(ChunkData data, Action<int, int, int> action)
     {
         for (int x = 0; x < ChunkData.ChunkHorizontalSize; x++)
         {
@@ -106,13 +107,19 @@ public class Chunk : MonoBehaviour
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool InHorizontalRange(int index)
+    private static bool WithinChunk(int x, int y, int z)
+    {
+        return InHorizontalRange(x) && InVerticalRange(y) && InHorizontalRange(z);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool InHorizontalRange(int index)
     {
         return index is >= 0 and < ChunkData.ChunkHorizontalSize;
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool InVerticalRange(int index)
+    private static bool InVerticalRange(int index)
     {
         return index is >= 0 and < ChunkData.ChunkVerticalSize;
     }
@@ -128,7 +135,7 @@ public class Chunk : MonoBehaviour
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Block GetBlock(ChunkData chunkData, int localX, int localY, int localZ)
     {
-        if(InHorizontalRange(localX) && InVerticalRange(localY) && InHorizontalRange(localZ))
+        if(WithinChunk(localX, localY, localZ))
         {
             return chunkData.blocks[localX, localY, localZ];
         }
@@ -196,11 +203,10 @@ public class Chunk : MonoBehaviour
     {
         MeshData meshData = new MeshData();
 
-        IterateOverBlocks(chunkData, (x, y, z) =>
+        IterateOverBlockPositions(chunkData, (x, y, z) =>
         {
             chunkData.blocks[x, y, z].AddFaceDataToMeshData(chunkData, x, y, z, ref meshData);
         });
-
 
         return meshData;
     }

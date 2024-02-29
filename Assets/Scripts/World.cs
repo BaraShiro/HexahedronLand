@@ -538,34 +538,35 @@ public class World : SingletonMonoBehaviour<World>
             Destroy(chunk.gameObject);
         }
     }
-
-    private Chunk GetChunk(Vector3Int blockPos)
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private Vector3Int BlockPositionToChunkPosition(Vector3Int blockPosition)
     {
-        const float multipleH = ChunkHorizontalSize;
-        const float multipleV = ChunkHorizontalSize;
-        blockPos.x = Mathf.FloorToInt(blockPos.x / multipleH ) * ChunkHorizontalSize;
-        blockPos.y = Mathf.FloorToInt(blockPos.y / multipleV ) * ChunkVerticalSize;
-        blockPos.z = Mathf.FloorToInt(blockPos.z / multipleH ) * ChunkHorizontalSize;
+        // FloorToInt of floating point division for correct negative positions
+        blockPosition.x = Mathf.FloorToInt(blockPosition.x / (float) ChunkHorizontalSize) * ChunkHorizontalSize;
+        blockPosition.y = Mathf.FloorToInt(blockPosition.y / (float) ChunkVerticalSize) * ChunkVerticalSize;
+        blockPosition.z = Mathf.FloorToInt(blockPosition.z / (float) ChunkHorizontalSize) * ChunkHorizontalSize;
+        
+        return blockPosition;
+    }
 
-        worldData.chunkDictionary.TryGetValue(blockPos, out Chunk chunk);
+    private Chunk GetChunkFromBlockPosition(Vector3Int blockPosition)
+    {
+        Vector3Int chunkPosition = BlockPositionToChunkPosition(blockPosition);
+        worldData.chunkDictionary.TryGetValue(chunkPosition, out Chunk chunk);
   
         return chunk;
     }
 
-    private ChunkData GetChunkData(Vector3Int blockPos)
+    private ChunkData GetChunkDataFromBlockPosition(Vector3Int blockPosition)
     {
-        const float multipleH = ChunkHorizontalSize;
-        const float multipleV = ChunkVerticalSize;
-        blockPos.x = Mathf.FloorToInt(blockPos.x / multipleH ) * ChunkHorizontalSize;
-        blockPos.y = Mathf.FloorToInt(blockPos.y / multipleV ) * ChunkVerticalSize;
-        blockPos.z = Mathf.FloorToInt(blockPos.z / multipleH ) * ChunkHorizontalSize;
-
-        worldData.chunkDataDictionary.TryGetValue(blockPos, out ChunkData chunkData);
+        Vector3Int chunkPosition = BlockPositionToChunkPosition(blockPosition);
+        worldData.chunkDataDictionary.TryGetValue(chunkPosition, out ChunkData chunkData);
   
         return chunkData;
     }
 
-    public Block GetBlock(int worldCoordX, int worldCoordY, int worldCoordZ)
+    public Block GetBlock(int worldPositionX, int worldPositionY, int worldPositionZ)
     {
         ChunkData containerChunkData = GetChunkData(new Vector3Int(worldCoordX, worldCoordY, worldCoordZ));
 
