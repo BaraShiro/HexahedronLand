@@ -119,30 +119,31 @@ public class LandscapeGenerator : MonoBehaviour
     {
         //TODO: check if chunk is underground and use underground generator if it is
 
-        Parallel.For(chunkData.worldPosition.x,chunkData.worldPosition.x + Chunk.ChunkData.ChunkHorizontalSize, parallelOptions, (x) =>
+        for (int x = chunkData.worldPosition.x; x < chunkData.worldPosition.x + Chunk.ChunkData.ChunkHorizontalSize; x++)
         {
-            Stopwatch stopwatch = new Stopwatch();
-            for (int z = chunkData.worldPosition.z; z < chunkData.worldPosition.z + Chunk.ChunkData.ChunkHorizontalSize; z++)
+            int capturedX = x;
+            Parallel.For(chunkData.worldPosition.z, chunkData.worldPosition.z + Chunk.ChunkData.ChunkHorizontalSize, parallelOptions, (z) =>
             {
+                Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Restart();
                 
-                SelectBiome(new Vector2Int(x, z), out SurfaceBiomeGenerator biomeGenerator, out int rockHeight, out int dirtHeight);
+                SelectBiome(new Vector2Int(capturedX, z), out SurfaceBiomeGenerator biomeGenerator, out int rockHeight, out int dirtHeight);
                 
                 stopwatch.Stop();
                 long select = stopwatch.ElapsedTicks;
 
                 stopwatch.Restart();
                 
-                chunkData = biomeGenerator.GenerateChunkColumn(chunkData, x, z, rockHeight, dirtHeight);
+                chunkData = biomeGenerator.GenerateChunkColumn(chunkData, capturedX, z, rockHeight, dirtHeight);
                 
                 stopwatch.Stop();
                 long handle = stopwatch.ElapsedTicks;
                 
                 WorldGenerationLogger.SelectBiomeTicks.Add(select);
                 WorldGenerationLogger.HandleLayerTicks.Add(handle);
-            }
-            
-        });
+
+            });
+        }
         
     }
 
