@@ -71,7 +71,7 @@ public static class Serialization
 
         foreach (SavedChunk.SavedBlock savedBlock in savedChunk.blocks)
         {
-            chunkData.blocks[savedBlock.x, savedBlock.y, savedBlock.z] = savedBlock.block;
+            chunkData.blocks[savedBlock.x][savedBlock.z][savedBlock.y] = savedBlock.block;
         }
 
         return true;

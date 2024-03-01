@@ -13,13 +13,23 @@ public class Chunk : MonoBehaviour
         public const int ChunkHorizontalSize = 16;
         public const int ChunkVerticalSize = 64;
         
-        public readonly Block[,,] blocks = new Block[ChunkHorizontalSize, ChunkVerticalSize, ChunkHorizontalSize];
+        public readonly Block[][][] blocks = new Block[ChunkHorizontalSize][][];
+
         public readonly World world;
         public readonly Vector3Int worldPosition;
         public ChunkData(World world, Vector3Int worldPosition)
         {
             this.world = world;
             this.worldPosition = worldPosition;
+            
+            for (int x = 0; x < ChunkHorizontalSize; x++)
+            {
+                blocks[x] = new Block[ChunkHorizontalSize][];
+                for (int y = 0; y < ChunkHorizontalSize; y++)
+                {
+                    blocks[x][y] = new Block[ChunkVerticalSize];
+                }
+            }
         }
     }
     
@@ -96,15 +106,6 @@ public class Chunk : MonoBehaviour
             }
         }
     }
-    
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void IterateOverBlocks(ChunkData data, Action<Block> action)
-    {
-        foreach (Block block in data.blocks)
-        {
-            action(block);
-        }
-    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool WithinChunk(int x, int y, int z)
@@ -137,7 +138,7 @@ public class Chunk : MonoBehaviour
     {
         if(WithinChunk(localX, localY, localZ))
         {
-            return chunkData.blocks[localX, localY, localZ];
+            return chunkData.blocks[localX][localZ][localY];
         }
         else
         {
@@ -177,7 +178,7 @@ public class Chunk : MonoBehaviour
     {
         if (InHorizontalRange(localX) && InVerticalRange(localY) && InHorizontalRange(localZ))
         {
-            chunkData.blocks[localX, localY, localZ] = block;
+            chunkData.blocks[localX][localZ][localY] = block;
         }
         else
         {
@@ -205,7 +206,7 @@ public class Chunk : MonoBehaviour
 
         IterateOverBlockPositions(chunkData, (x, y, z) =>
         {
-            chunkData.blocks[x, y, z].AddFaceDataToMeshData(chunkData, x, y, z, ref meshData);
+            chunkData.blocks[x][z][y].AddFaceDataToMeshData(chunkData, x, y, z, ref meshData);
         });
 
         return meshData;

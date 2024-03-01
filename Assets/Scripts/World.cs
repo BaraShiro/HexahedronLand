@@ -665,7 +665,7 @@ public class World : SingletonMonoBehaviour<World>
                     chunk.UpdateChunk(meshData);
                     IterateOverBlockPositions(chunk.Data, (x, y, z) =>
                     {
-                        Block block = chunk.Data.blocks[x, y, z];
+                        Block block = chunk.Data.blocks[x][z][y];
                         if (block.vegetation.HasValue)
                         {
                             PlaceVegetation(x, y, z, block, chunk, block.vegetation.Value);

@@ -39,12 +39,12 @@ public class SavedChunk
             {
                 for (int z = 0; z < ChunkHorizontalSize; z++)
                 {
-                    if (!chunkData.blocks[x, y, z].changed)
+                    if (!chunkData.blocks[x][z][y].changed)
                     {
                         continue;
                     }
                     
-                    blocks.Add(new SavedBlock(x, y, z, chunkData.blocks[x, y, z]));
+                    blocks.Add(new SavedBlock(x, y, z, chunkData.blocks[x][z][y]));
                 }
             }
         }
