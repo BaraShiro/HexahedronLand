@@ -55,8 +55,8 @@ public class Block
         
     }
 
-    public static readonly string DebugBlockName = "Debug";
-    public static readonly string VoidBlockName = "Void";
+    public const string DebugBlockName = "Debug";
+    public const string VoidBlockName = "Void";
     private static readonly TextureTilePosition DebugTilePosition = new TextureTilePosition(0, 0);
     private static readonly BlockData DebugBlockData = new BlockData()
     {
