@@ -225,9 +225,11 @@ public class LandscapeGenerator : MonoBehaviour
 
     private List<Vector2Int> CalculateBiomeCenters(Vector2Int biomePosition, int radius)
     {
-        // Set capacity to one more than max to avoid resize
-        List<Vector2Int> centerPoints = new List<Vector2Int>((((radius * 2) + 1) * 2) + 1);
-        
+        // Set capacity to number of points to add to avoid resize
+        int capacity1D = (radius * 2) + 1;
+        int capacity2D = capacity1D * capacity1D;
+        List<Vector2Int> centerPoints = new List<Vector2Int>(capacity2D);
+
         for (int x = -radius; x <= radius; x++)
         {
             for (int z = -radius; z <= radius; z++)
