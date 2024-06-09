@@ -2,7 +2,6 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
 using Unity.Mathematics;
 using Debug = UnityEngine.Debug;
@@ -29,8 +28,16 @@ public class LandscapeGenerator : MonoBehaviour
     {
         public BiomeData northWestBiome;
         public BiomeData northEastBiome;
-        public BiomeData southEastBiome;
         public BiomeData southWestBiome;
+        public BiomeData southEastBiome;
+
+        public BiomeCenters(BiomeData northWestBiome, BiomeData northEastBiome, BiomeData southWestBiome, BiomeData southEastBiome)
+        {
+            this.northWestBiome = northWestBiome;
+            this.northEastBiome = northEastBiome;
+            this.southWestBiome = southWestBiome;
+            this.southEastBiome = southEastBiome;
+        }
 
         public BiomeData GetClosest(Vector2Int point)
         {
@@ -149,33 +156,119 @@ public class LandscapeGenerator : MonoBehaviour
 
     private BiomeCenters CalculateBiomeData(Vector2Int horizontalPosition)
     {
-        List<BiomeData> dataList = new List<BiomeData>(biomeCenterPoints.Capacity);
+        Vector2Int northWestPoint = horizontalPosition;
+        Vector2Int northEastPoint = horizontalPosition;
+        Vector2Int southWestPoint = horizontalPosition;
+        Vector2Int southEastPoint = horizontalPosition;
+
+        float northWestShortestDistance = float.PositiveInfinity;
+        float northEastShortestDistance = float.PositiveInfinity;
+        float southWestShortestDistance = float.PositiveInfinity;
+        float southEastShortestDistance = float.PositiveInfinity;
+
         foreach (Vector2Int point in biomeCenterPoints)
         {
-            dataList.Add(new BiomeData
-            (
-                point,
-                Vector2Int.Distance(horizontalPosition, point),
-                NoiseGenerator.OctaveSimplexNoiseBurstCompiled(
-                    point.x + World.WorldOffset.x,
-                    point.y + World.WorldOffset.z,
-                    in biomeTemperatureNoiseSettings.settingsData),
-                NoiseGenerator.OctaveSimplexNoiseBurstCompiled(
-                    point.x + World.WorldOffset.x,
-                    point.y + World.WorldOffset.z,
-                    in biomePrecipitationNoiseSettings.settingsData)
-            ));
-        }
-        dataList.Sort((x, y) => x.distance.CompareTo(y.distance));
+            float distance = Vector2Int.Distance(horizontalPosition, point);
 
-        BiomeCenters biomeCenters = new BiomeCenters()
-        {
-            northWestBiome = dataList.FirstOrDefault(data => data.center.y >= horizontalPosition.y && data.center.x < horizontalPosition.x),
-            northEastBiome = dataList.FirstOrDefault(data => data.center.y >= horizontalPosition.y && data.center.x >= horizontalPosition.x),
-            southEastBiome = dataList.FirstOrDefault(data => data.center.y < horizontalPosition.y && data.center.x >= horizontalPosition.x),
-            southWestBiome = dataList.FirstOrDefault(data => data.center.y < horizontalPosition.y && data.center.x < horizontalPosition.x)
-        };
-        return biomeCenters;
+            // North
+            if (point.y >= horizontalPosition.y)
+            {
+                // East
+                if (point.x >= horizontalPosition.x)
+                {
+                    if (distance < northEastShortestDistance)
+                    {
+                        northEastShortestDistance = distance;
+                        northEastPoint = point;
+                    }
+                }
+                // West
+                else
+                {
+                    if (distance < northWestShortestDistance)
+                    {
+                        northWestShortestDistance = distance;
+                        northWestPoint = point;
+                    }
+                }
+            }
+            //South
+            else
+            {
+                // East
+                if (point.x >= horizontalPosition.x)
+                {
+                    if (distance < southEastShortestDistance)
+                    {
+                        southEastShortestDistance = distance;
+                        southEastPoint = point;
+                    }
+                }
+                // West
+                else
+                {
+                    if (distance < southWestShortestDistance)
+                    {
+                        southWestShortestDistance = distance;
+                        southWestPoint = point;
+                    }
+                }
+            }
+        }
+
+        BiomeData northWestBiome = new BiomeData(
+            northWestPoint,
+            northWestShortestDistance,
+            NoiseGenerator.OctaveSimplexNoiseBurstCompiled(
+                northWestPoint.x + World.WorldOffset.x,
+                northWestPoint.y + World.WorldOffset.z,
+                in biomeTemperatureNoiseSettings.settingsData),
+            NoiseGenerator.OctaveSimplexNoiseBurstCompiled(
+                northWestPoint.x + World.WorldOffset.x,
+                northWestPoint.y + World.WorldOffset.z,
+                in biomePrecipitationNoiseSettings.settingsData)
+            );
+
+        BiomeData northEastBiome = new BiomeData(
+            northEastPoint,
+            northEastShortestDistance,
+            NoiseGenerator.OctaveSimplexNoiseBurstCompiled(
+                northEastPoint.x + World.WorldOffset.x,
+                northEastPoint.y + World.WorldOffset.z,
+                in biomeTemperatureNoiseSettings.settingsData),
+            NoiseGenerator.OctaveSimplexNoiseBurstCompiled(
+                northEastPoint.x + World.WorldOffset.x,
+                northEastPoint.y + World.WorldOffset.z,
+                in biomePrecipitationNoiseSettings.settingsData)
+        );
+
+        BiomeData southWestBiome = new BiomeData(
+            southWestPoint,
+            southWestShortestDistance,
+            NoiseGenerator.OctaveSimplexNoiseBurstCompiled(
+                southWestPoint.x + World.WorldOffset.x,
+                southWestPoint.y + World.WorldOffset.z,
+                in biomeTemperatureNoiseSettings.settingsData),
+            NoiseGenerator.OctaveSimplexNoiseBurstCompiled(
+                southWestPoint.x + World.WorldOffset.x,
+                southWestPoint.y + World.WorldOffset.z,
+                in biomePrecipitationNoiseSettings.settingsData)
+        );
+
+        BiomeData southEastBiome = new BiomeData(
+            southEastPoint,
+            southEastShortestDistance,
+            NoiseGenerator.OctaveSimplexNoiseBurstCompiled(
+                southEastPoint.x + World.WorldOffset.x,
+                southEastPoint.y + World.WorldOffset.z,
+                in biomeTemperatureNoiseSettings.settingsData),
+            NoiseGenerator.OctaveSimplexNoiseBurstCompiled(
+                southEastPoint.x + World.WorldOffset.x,
+                southEastPoint.y + World.WorldOffset.z,
+                in biomePrecipitationNoiseSettings.settingsData)
+        );
+
+        return new BiomeCenters(northWestBiome, northEastBiome, southWestBiome, southEastBiome);
     }
 
     private ref SurfaceBiomeGenerator SelectBiomeGenerator(in BiomeData biomeData)
