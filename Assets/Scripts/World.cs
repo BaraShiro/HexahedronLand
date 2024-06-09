@@ -71,7 +71,7 @@ public class World : SingletonMonoBehaviour<World>
             {
                 null => 1,
                 PrioritizedPosition otherPositionPriority => priority.CompareTo(otherPositionPriority.priority),
-                _ => throw new ArgumentException("Object is not a PositionPriority")
+                _ => throw new ArgumentException("Object is not a PrioritizedPosition")
             };
         }
     }
@@ -82,16 +82,21 @@ public class World : SingletonMonoBehaviour<World>
     private class WorldGenerationData
     {
         public readonly List<PrioritizedPosition> prioritizedChunkPositions;
-        public readonly List<Vector3Int> chunkPositionsToCreate; // TODO: Don't keep duplicate data, the positions is same as in prio
         public readonly List<Vector3Int> chunkDataPositionsToCreate;
         public readonly List<Vector3Int> chunkPositionsToRemove;
         public readonly List<Vector3Int> chunkDataPositionsToRemove;
 
+        private int radius;
+        private int verticalRadius;
+
         public WorldGenerationData(WorldData worldData, Vector3Int generateAround, int radius)
         {
-            GetChunkPositionsAroundPoint(worldData, generateAround, radius, out chunkPositionsToCreate, out prioritizedChunkPositions);
-            GetChunkDataPositionsAroundPoint(worldData, generateAround, radius + 1, out chunkDataPositionsToCreate);
-            GetChunksToRemove(worldData, generateAround, radius * 2, out chunkPositionsToRemove, out chunkDataPositionsToRemove);
+            this.radius = radius < 1 ? 1 : radius;
+            this.verticalRadius = CalculateVerticalRadius(radius);
+            
+            GetChunkPositionsAroundPoint(in worldData, generateAround, out prioritizedChunkPositions);
+            GetChunkDataPositionsAroundPoint(in worldData, generateAround, out chunkDataPositionsToCreate);
+            GetChunksToRemove(in worldData, generateAround, out chunkPositionsToRemove, out chunkDataPositionsToRemove);
         }
 
         /// <summary>
@@ -102,24 +107,33 @@ public class World : SingletonMonoBehaviour<World>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int CalculateCapacity(int radius)
         {
-            // Add one to compensate for rounding
-            int capacity1D = (radius * 2) + 1;
-            int capacity3D = (int)(capacity1D * capacity1D * capacity1D * 0.55f); // TODO: Take ChunkVerticalSize into account
+            const float cubeToSphere = 0.55f;
+            const float verticalScale = (float) ChunkHorizontalSize / ChunkVerticalSize;
+            int capacity1D = (radius * 2) + 1; // Add one to compensate for rounding
+            float capacity1DVertical = capacity1D * verticalScale;
+            int capacity3D = (int)(capacity1D * capacity1D * capacity1DVertical * cubeToSphere);
             return capacity3D;
         }
-
-        private static void GetChunkPositionsAroundPoint(WorldData worldData, Vector3Int center, int radius, 
-            out List<Vector3Int> positions, out List<PrioritizedPosition> priorities)
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int CalculateVerticalRadius(int radius)
         {
-            
+            const float verticalScale = (float) ChunkHorizontalSize / ChunkVerticalSize;
+            float verticalRadius = radius * verticalScale;
+            verticalRadius *= 0.5f; // Generate less vertically as it is less visible
+            if (verticalRadius < 1) verticalRadius = 1f;
+            return Mathf.RoundToInt(verticalRadius);
+        }
+
+        private void GetChunkPositionsAroundPoint(in WorldData worldData, Vector3Int center, 
+            out List<PrioritizedPosition> prioritizedPositions)
+        {
             int capacity3D = CalculateCapacity(radius);
-            positions = new List<Vector3Int>(capacity3D);
-            priorities = new List<PrioritizedPosition>(capacity3D);
+            prioritizedPositions = new List<PrioritizedPosition>(capacity3D);
 
             for (int x = -radius; x <= radius; x++)
             {   
-                // Generate less vertically as it is less visible
-                for (int y = -1; y <= 1; y++) // TODO: Calculate correct value instead of hard coding
+                for (int y = -verticalRadius; y <= verticalRadius; y++)
                 {
                     for (int z = -radius; z <= radius; z++)
                     {
@@ -130,28 +144,28 @@ public class World : SingletonMonoBehaviour<World>
                         float priority = Vector3Int.Distance(center, position);
                         if (!worldData.chunkDictionary.ContainsKey(position) && priority <= radius * ChunkHorizontalSize)
                         {
-                            priorities.Add(new PrioritizedPosition(position, priority));
-                            positions.Add(position);
+                            prioritizedPositions.Add(new PrioritizedPosition(position, priority));
                         }
                     }
                 }
             }
             
-            priorities.Sort();
+            prioritizedPositions.Sort();
         }
         
-        private static void GetChunkDataPositionsAroundPoint(WorldData worldData, Vector3Int center, int radius, 
+        private void GetChunkDataPositionsAroundPoint(in WorldData worldData, Vector3Int center, 
             out List<Vector3Int> dataPositions)
         {
+            // Add one to generate more data positions than chunk positions
+            radius += 1;
+            verticalRadius += 1;
 
             int capacity3D = CalculateCapacity(radius);
             dataPositions = new List<Vector3Int>(capacity3D);
 
             for (int x = -radius; x <= radius; x++)
             {   
-                // Generate less vertically as it is less visible
-                // Add one to radius to compensate for integer division
-                for (int y = -2; y <= 2; y++) // TODO: Calculate correct value instead of hard coding
+                for (int y = -verticalRadius; y <= verticalRadius; y++)
                 {
                     for (int z = -radius; z <= radius; z++)
                     {
@@ -168,7 +182,7 @@ public class World : SingletonMonoBehaviour<World>
             }
         }
 
-        private static void GetChunksToRemove(WorldData worldData, Vector3Int center, int radius,
+        private void GetChunksToRemove(in WorldData worldData, Vector3Int center,
             out List<Vector3Int> chunkPositions, out List<Vector3Int> chunkDataPositions)
 
         {
@@ -368,7 +382,7 @@ public class World : SingletonMonoBehaviour<World>
             stopwatch.Restart();
             worldGenerationData = await GenerateWorldGenerationDataAsync(generateAround, radius, parallelizationUtils.taskCancellationToken);
             stopwatch.Stop();
-            WorldGenerationStepHandler($"Calculated {worldGenerationData.chunkDataPositionsToCreate.Count} data positions and {worldGenerationData.chunkPositionsToCreate.Count} chunk positions in {stopwatch.ElapsedMilliseconds} ms");
+            WorldGenerationStepHandler($"Calculated {worldGenerationData.chunkDataPositionsToCreate.Count} data positions and {worldGenerationData.prioritizedChunkPositions.Count} chunk positions in {stopwatch.ElapsedMilliseconds} ms");
         }
         catch (OperationCanceledException)
         {
@@ -394,7 +408,7 @@ public class World : SingletonMonoBehaviour<World>
             WorldGenerationStepHandler($"Generating chunk data...");
             WorldGenerationLogger.ClearChunkGenerationDetails();
             stopwatch.Restart();
-            chunkDataDictionary = await GenerateChunkDataParallelAsync(worldGenerationData.chunkDataPositionsToCreate);
+            chunkDataDictionary = await GenerateChunkDataParallelAsync(worldGenerationData.chunkDataPositionsToCreate); // TODO: Put chunk data directly in worldData.chunkDataDictionary
             stopwatch.Stop();
             WorldGenerationStepHandler($"Generated {worldGenerationData.chunkDataPositionsToCreate.Count} chunks in {stopwatch.ElapsedMilliseconds} ms\n" +
                                        $"Time spent in SelectBiome: {WorldGenerationLogger.GetSelectBiomeDetails}\n" +
@@ -409,16 +423,16 @@ public class World : SingletonMonoBehaviour<World>
 
         WorldGenerationStepHandler($"Instantiating chunks...");
         stopwatch.Restart();
-        foreach (var (chunkPosition, chunkData) in chunkDataDictionary)
+        foreach ((Vector3Int chunkPosition, ChunkData chunkData) in chunkDataDictionary)
         {
             worldData.chunkDataDictionary.TryAdd(chunkPosition, chunkData);
         }
 
-        foreach (Vector3Int position in worldGenerationData.chunkPositionsToCreate)
+        foreach (PrioritizedPosition prioritizedPosition in worldGenerationData.prioritizedChunkPositions)
         {
-            if(worldData.chunkDataDictionary.TryGetValue(position, out ChunkData data))
+            if(worldData.chunkDataDictionary.TryGetValue(prioritizedPosition.position, out ChunkData data))
             {
-                worldData.chunkDictionary.TryAdd(position, CreateChunk(position, data));
+                worldData.chunkDictionary.TryAdd(prioritizedPosition.position, CreateChunk(prioritizedPosition.position, data));
             }
         }
         stopwatch.Stop();
@@ -428,9 +442,9 @@ public class World : SingletonMonoBehaviour<World>
         {
             WorldGenerationStepHandler($"Generating meshes...");
             stopwatch.Restart();
-            meshDataDictionary = await GenerateMeshDataParallelAsync(worldGenerationData.chunkPositionsToCreate);
+            meshDataDictionary = await GenerateMeshDataParallelAsync(worldGenerationData.prioritizedChunkPositions);
             stopwatch.Stop();
-            WorldGenerationStepHandler($"Generated {worldGenerationData.chunkPositionsToCreate.Count} meshes in {stopwatch.ElapsedMilliseconds} ms");
+            WorldGenerationStepHandler($"Generated {worldGenerationData.prioritizedChunkPositions.Count} meshes in {stopwatch.ElapsedMilliseconds} ms");
         }
         catch (OperationCanceledException)
         {
@@ -487,17 +501,17 @@ public class World : SingletonMonoBehaviour<World>
             }, parallelizationUtils.taskCancellationToken);
     }
 
-    private Task<ConcurrentDictionary<Vector3Int, MeshData>> GenerateMeshDataParallelAsync(List<Vector3Int> chunkPositionsToCreate)
+    private Task<ConcurrentDictionary<Vector3Int, MeshData>> GenerateMeshDataParallelAsync(List<PrioritizedPosition> prioritizedPositions)
     {
         ConcurrentDictionary<Vector3Int, MeshData> meshDataDictionary = new ConcurrentDictionary<Vector3Int, MeshData>();
 
         return Task.Run(() =>
             {
-                Parallel.ForEach(chunkPositionsToCreate, parallelizationUtils.parallelOptions, (position) =>
+                Parallel.ForEach(prioritizedPositions, parallelizationUtils.parallelOptions, (prioritizedPosition) =>
                 {
                     parallelizationUtils.taskCancellationToken.ThrowIfCancellationRequested();
                     
-                    if(worldData.chunkDataDictionary.TryGetValue(position, out ChunkData chunkData))
+                    if(worldData.chunkDataDictionary.TryGetValue(prioritizedPosition.position, out ChunkData chunkData))
                     {
                         MeshData meshData = CalculateMeshData(chunkData);
                         meshDataDictionary.TryAdd(chunkData.worldPosition, meshData);
@@ -512,7 +526,7 @@ public class World : SingletonMonoBehaviour<World>
 
     private Chunk CreateChunk(Vector3Int chunkPosition, ChunkData chunkData)
     {
-        Chunk newChunk = Instantiate(chunkPrefab, new Vector3(chunkPosition.x, chunkPosition.y, chunkPosition.z), Quaternion.identity, chunkParent);
+        Chunk newChunk = Instantiate(chunkPrefab, new Vector3(chunkPosition.x, chunkPosition.y, chunkPosition.z), Quaternion.identity, chunkParent); // TODO: Use chunkPosition
         newChunk.name = $"Chunk {chunkPosition.x}, {chunkPosition.y}, {chunkPosition.z}";
         newChunk.InitializeChunk(chunkData);
         return newChunk;
