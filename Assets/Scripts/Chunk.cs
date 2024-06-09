@@ -10,19 +10,31 @@ public class Chunk : MonoBehaviour
 {
     public class ChunkData
     {
-        public Block[,,] blocks = new Block[ChunkSize, ChunkSize, ChunkSize];
-        public const int ChunkSize = 16;
-        public World world;
-        public Vector3Int worldPosition;
+        public const int ChunkHorizontalSize = 16;
+        public const int ChunkVerticalSize = 64;
+        
+        public readonly Block[][][] blocks = new Block[ChunkHorizontalSize][][];
+
+        public readonly World world;
+        public readonly Vector3Int worldPosition;
         public ChunkData(World world, Vector3Int worldPosition)
         {
             this.world = world;
             this.worldPosition = worldPosition;
+            
+            for (int x = 0; x < ChunkHorizontalSize; x++)
+            {
+                blocks[x] = new Block[ChunkHorizontalSize][];
+                for (int y = 0; y < ChunkHorizontalSize; y++)
+                {
+                    blocks[x][y] = new Block[ChunkVerticalSize];
+                }
+            }
         }
     }
     
-    public const float tileSize = 0.125f; // TODO: Make changeable in inspector somehow
-    public const float offset = 0.001f; // Compensate for floating point rounding errors
+    public const float TileSize = 0.125f; // TODO: Make changeable in inspector somehow
+    public const float Offset = 0.001f; // Compensate for floating point rounding errors
 
     public ChunkData Data { get; private set; }
     
@@ -81,33 +93,36 @@ public class Chunk : MonoBehaviour
     #region Static functions
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void IterateOverBlocks(ChunkData data, Action<int, int, int> action)
+    public static void IterateOverBlockPositions(ChunkData data, Action<int, int, int> action)
     {
-        for (int x = 0; x < ChunkData.ChunkSize; x++)
+        for (int x = 0; x < ChunkData.ChunkHorizontalSize; x++)
         {
-            for (int y = 0; y < ChunkData.ChunkSize; y++)
+            for (int y = 0; y < ChunkData.ChunkVerticalSize; y++)
             {
-                for (int z = 0; z < ChunkData.ChunkSize; z++)
+                for (int z = 0; z < ChunkData.ChunkHorizontalSize; z++)
                 {
                     action(x, y, z);
                 }
             }
         }
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void IterateOverBlocks(ChunkData data, Action<Block> action)
+    private static bool WithinChunk(int x, int y, int z)
     {
-        foreach (Block block in data.blocks)
-        {
-            action(block);
-        }
+        return InHorizontalRange(x) && InVerticalRange(y) && InHorizontalRange(z);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool InRange(int index)
+    private static bool InHorizontalRange(int index)
     {
-        return index is >= 0 and < ChunkData.ChunkSize;
+        return index is >= 0 and < ChunkData.ChunkHorizontalSize;
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool InVerticalRange(int index)
+    {
+        return index is >= 0 and < ChunkData.ChunkVerticalSize;
     }
 
     //TODO: Make world space getters
@@ -121,9 +136,9 @@ public class Chunk : MonoBehaviour
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Block GetBlock(ChunkData chunkData, int localX, int localY, int localZ)
     {
-        if(InRange(localX) && InRange(localY) && InRange(localZ))
+        if(WithinChunk(localX, localY, localZ))
         {
-            return chunkData.blocks[localX, localY, localZ];
+            return chunkData.blocks[localX][localZ][localY];
         }
         else
         {
@@ -161,9 +176,9 @@ public class Chunk : MonoBehaviour
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SetBlockLocal(ChunkData chunkData, int localX, int localY, int localZ, Block block)
     {
-        if (InRange(localX) && InRange(localY) && InRange(localZ))
+        if (InHorizontalRange(localX) && InVerticalRange(localY) && InHorizontalRange(localZ))
         {
-            chunkData.blocks[localX, localY, localZ] = block;
+            chunkData.blocks[localX][localZ][localY] = block;
         }
         else
         {
@@ -189,11 +204,10 @@ public class Chunk : MonoBehaviour
     {
         MeshData meshData = new MeshData();
 
-        IterateOverBlocks(chunkData, (x, y, z) =>
+        IterateOverBlockPositions(chunkData, (x, y, z) =>
         {
-            chunkData.blocks[x, y, z].AddFaceDataToMeshData(chunkData, x, y, z, ref meshData);
+            chunkData.blocks[x][z][y].AddFaceDataToMeshData(chunkData, x, y, z, ref meshData);
         });
-
 
         return meshData;
     }
@@ -206,7 +220,8 @@ public class Chunk : MonoBehaviour
     {
         if (Application.isPlaying)
         {
-            int chunkSize = ChunkData.ChunkSize;
+            int chunkHorizontalSize = ChunkData.ChunkHorizontalSize;
+            int chunkVerticalSize = ChunkData.ChunkVerticalSize;
             if (Selection.activeObject == gameObject)
             {
                 Gizmos.color = new Color(0, 1, 0, 0.4f);
@@ -214,13 +229,13 @@ public class Chunk : MonoBehaviour
             else
             {
                 Gizmos.color = new Color(1, 0, 1, 0.4f);
-                Gizmos.DrawCube(transform.position + new Vector3(chunkSize / 2f - 0.5f, chunkSize / 2f - 0.5f, chunkSize / 2f - 0.5f),
+                Gizmos.DrawCube(transform.position + new Vector3(chunkHorizontalSize / 2f - 0.5f, chunkVerticalSize / 2f - 0.5f, chunkHorizontalSize / 2f - 0.5f),
                     new Vector3(1f, 1f, 1f));
                 return;
             }
 
-            Gizmos.DrawCube(transform.position + new Vector3(chunkSize / 2f - 0.5f, chunkSize / 2f - 0.5f, chunkSize / 2f - 0.5f),
-                new Vector3(chunkSize + 0.001f, chunkSize + 0.001f, chunkSize + 0.001f));
+            Gizmos.DrawCube(transform.position + new Vector3(chunkHorizontalSize / 2f - 0.5f, chunkVerticalSize / 2f - 0.5f, chunkHorizontalSize / 2f - 0.5f),
+                new Vector3(chunkHorizontalSize + 0.001f, chunkVerticalSize + 0.001f, chunkHorizontalSize + 0.001f));
         }
     }
 #endif

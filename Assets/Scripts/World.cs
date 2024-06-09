@@ -6,7 +6,6 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using TMPro;
 using UnityEngine;
 using static Chunk;
 using static Chunk.ChunkData;
@@ -16,7 +15,7 @@ using Random = UnityEngine.Random;
 public class World : SingletonMonoBehaviour<World>
 {
     /// <summary>
-    /// A class for keeping  
+    /// A class for keeping ParallelOptions and CancellationTokens.
     /// </summary>
     private class ParallelizationUtils
     {
@@ -38,14 +37,8 @@ public class World : SingletonMonoBehaviour<World>
     
     private class WorldData
     {
-        public readonly ConcurrentDictionary<Vector3Int, ChunkData> chunkDataDictionary;
-        public readonly ConcurrentDictionary<Vector3Int, Chunk> chunkDictionary;
-
-        public WorldData()
-        {
-          chunkDataDictionary = new ConcurrentDictionary<Vector3Int, ChunkData>();
-          chunkDictionary = new ConcurrentDictionary<Vector3Int, Chunk>();
-        }
+        public readonly ConcurrentDictionary<Vector3Int, ChunkData> chunkDataDictionary = new ConcurrentDictionary<Vector3Int, ChunkData>();
+        public readonly ConcurrentDictionary<Vector3Int, Chunk> chunkDictionary = new ConcurrentDictionary<Vector3Int, Chunk>();
     }
 
     /// <summary>
@@ -54,7 +47,7 @@ public class World : SingletonMonoBehaviour<World>
     private readonly struct PrioritizedPosition : IEquatable<PrioritizedPosition>, IComparable, IComparable<PrioritizedPosition>
     {
         public readonly Vector3Int position;
-        public readonly float priority;
+        private readonly float priority;
 
         public PrioritizedPosition(Vector3Int position, float priority)
         {
@@ -78,7 +71,7 @@ public class World : SingletonMonoBehaviour<World>
             {
                 null => 1,
                 PrioritizedPosition otherPositionPriority => priority.CompareTo(otherPositionPriority.priority),
-                _ => throw new ArgumentException("Object is not a PositionPriority")
+                _ => throw new ArgumentException("Object is not a PrioritizedPosition")
             };
         }
     }
@@ -89,16 +82,21 @@ public class World : SingletonMonoBehaviour<World>
     private class WorldGenerationData
     {
         public readonly List<PrioritizedPosition> prioritizedChunkPositions;
-        public readonly List<Vector3Int> chunkPositionsToCreate; // TODO: Don't keep duplicate data, the positions is same as in prio
         public readonly List<Vector3Int> chunkDataPositionsToCreate;
         public readonly List<Vector3Int> chunkPositionsToRemove;
         public readonly List<Vector3Int> chunkDataPositionsToRemove;
 
+        private int radius;
+        private int verticalRadius;
+
         public WorldGenerationData(WorldData worldData, Vector3Int generateAround, int radius)
         {
-            GetChunkPositionsAroundPoint(worldData, generateAround, radius, out chunkPositionsToCreate, out prioritizedChunkPositions);
-            GetChunkDataPositionsAroundPoint(worldData, generateAround, radius + 1, out chunkDataPositionsToCreate);
-            GetChunksToRemove(worldData, generateAround, radius * 2, out chunkPositionsToRemove, out chunkDataPositionsToRemove);
+            this.radius = radius < 1 ? 1 : radius;
+            this.verticalRadius = CalculateVerticalRadius(radius);
+            
+            GetChunkPositionsAroundPoint(in worldData, generateAround, out prioritizedChunkPositions);
+            GetChunkDataPositionsAroundPoint(in worldData, generateAround, out chunkDataPositionsToCreate);
+            GetChunksToRemove(in worldData, generateAround, out chunkPositionsToRemove, out chunkDataPositionsToRemove);
         }
 
         /// <summary>
@@ -109,64 +107,73 @@ public class World : SingletonMonoBehaviour<World>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int CalculateCapacity(int radius)
         {
-            // Add one to compensate for rounding
-            int capacity1D = (radius * 2) + 1;
-            int capacity3D = (int)(capacity1D * capacity1D * capacity1D * 0.55f);
+            const float cubeToSphere = 0.55f;
+            const float verticalScale = (float) ChunkHorizontalSize / ChunkVerticalSize;
+            int capacity1D = (radius * 2) + 1; // Add one to compensate for rounding
+            float capacity1DVertical = capacity1D * verticalScale;
+            int capacity3D = (int)(capacity1D * capacity1D * capacity1DVertical * cubeToSphere);
             return capacity3D;
         }
-
-        private static void GetChunkPositionsAroundPoint(WorldData worldData, Vector3Int center, int radius, 
-            out List<Vector3Int> positions, out List<PrioritizedPosition> priorities)
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int CalculateVerticalRadius(int radius)
         {
-            
+            const float verticalScale = (float) ChunkHorizontalSize / ChunkVerticalSize;
+            float verticalRadius = radius * verticalScale;
+            verticalRadius *= 0.5f; // Generate less vertically as it is less visible
+            if (verticalRadius < 1) verticalRadius = 1f;
+            return Mathf.RoundToInt(verticalRadius);
+        }
+
+        private void GetChunkPositionsAroundPoint(in WorldData worldData, Vector3Int center, 
+            out List<PrioritizedPosition> prioritizedPositions)
+        {
             int capacity3D = CalculateCapacity(radius);
-            positions = new List<Vector3Int>(capacity3D);
-            priorities = new List<PrioritizedPosition>(capacity3D);
+            prioritizedPositions = new List<PrioritizedPosition>(capacity3D);
 
             for (int x = -radius; x <= radius; x++)
             {   
-                // Generate less vertically as it is less visible
-                for (int y = -(radius / 2); y <= (radius / 2); y++) 
+                for (int y = -verticalRadius; y <= verticalRadius; y++)
                 {
                     for (int z = -radius; z <= radius; z++)
                     {
                         Vector3Int position = new Vector3Int(
-                            center.x + (x * ChunkSize), 
-                            center.y + (y * ChunkSize),
-                            center.z + (z * ChunkSize));
+                            center.x + (x * ChunkHorizontalSize), 
+                            center.y + (y * ChunkVerticalSize),
+                            center.z + (z * ChunkHorizontalSize));
                         float priority = Vector3Int.Distance(center, position);
-                        if (!worldData.chunkDictionary.ContainsKey(position) && priority <= radius * ChunkSize)
+                        if (!worldData.chunkDictionary.ContainsKey(position) && priority <= radius * ChunkHorizontalSize)
                         {
-                            priorities.Add(new PrioritizedPosition(position, priority));
-                            positions.Add(position);
+                            prioritizedPositions.Add(new PrioritizedPosition(position, priority));
                         }
                     }
                 }
             }
             
-            priorities.Sort();
+            prioritizedPositions.Sort();
         }
         
-        private static void GetChunkDataPositionsAroundPoint(WorldData worldData, Vector3Int center, int radius, 
+        private void GetChunkDataPositionsAroundPoint(in WorldData worldData, Vector3Int center, 
             out List<Vector3Int> dataPositions)
         {
+            // Add one to generate more data positions than chunk positions
+            radius += 1;
+            verticalRadius += 1;
 
             int capacity3D = CalculateCapacity(radius);
             dataPositions = new List<Vector3Int>(capacity3D);
 
             for (int x = -radius; x <= radius; x++)
             {   
-                // Generate less vertically as it is less visible
-                // Add one to radius to compensate for integer division
-                for (int y = -((radius / 2) + 1); y <= ((radius / 2) + 1); y++)
+                for (int y = -verticalRadius; y <= verticalRadius; y++)
                 {
                     for (int z = -radius; z <= radius; z++)
                     {
                         Vector3Int position = new Vector3Int(
-                            center.x + (x * ChunkSize), 
-                            center.y + (y * ChunkSize),
-                            center.z + (z * ChunkSize));
-                        if (!worldData.chunkDataDictionary.ContainsKey(position) && Vector3Int.Distance(center, position) <= radius * ChunkSize)
+                            center.x + (x * ChunkHorizontalSize), 
+                            center.y + (y * ChunkVerticalSize),
+                            center.z + (z * ChunkHorizontalSize));
+                        if (!worldData.chunkDataDictionary.ContainsKey(position) && Vector3Int.Distance(center, position) <= radius * ChunkHorizontalSize)
                         {
                             dataPositions.Add(position);
                         }
@@ -175,7 +182,7 @@ public class World : SingletonMonoBehaviour<World>
             }
         }
 
-        private static void GetChunksToRemove(WorldData worldData, Vector3Int center, int radius,
+        private void GetChunksToRemove(in WorldData worldData, Vector3Int center,
             out List<Vector3Int> chunkPositions, out List<Vector3Int> chunkDataPositions)
 
         {
@@ -183,7 +190,7 @@ public class World : SingletonMonoBehaviour<World>
             int capacity = CalculateCapacity(radius);
             chunkPositions = new List<Vector3Int>(capacity);
             chunkDataPositions = new List<Vector3Int>(capacity);
-            radius *= ChunkSize;
+            radius *= ChunkHorizontalSize;
 
             foreach (Vector3Int position in worldData.chunkDictionary.Keys)
             {
@@ -195,7 +202,7 @@ public class World : SingletonMonoBehaviour<World>
 
             foreach (Vector3Int position in worldData.chunkDataDictionary.Keys)
             {
-                if (Vector3Int.Distance(center, position) > radius + ChunkSize)
+                if (Vector3Int.Distance(center, position) > radius + ChunkHorizontalSize)
                 {
                     chunkDataPositions.Add(position);
                 }
@@ -227,7 +234,7 @@ public class World : SingletonMonoBehaviour<World>
     private PlayerController player;
     private Vector3 lastUpdatedPosition;
 
-    private Vector3Int initialPoint = Vector3Int.zero; // TODO: load initial world spawn point from save file
+    [SerializeField] private Vector3Int initialPoint = Vector3Int.zero; // TODO: load initial world spawn point from save file
     
     public static event EventHandler OnWorldGenerationStart;
     public static event EventHandler OnWorldGenerationFinish;
@@ -295,12 +302,12 @@ public class World : SingletonMonoBehaviour<World>
         if (player) // TODO: use event
         {
             Vector3 position = player.GetPlayerPosition();
-            if (Vector3.Distance(lastUpdatedPosition, position) > ChunkSize)
+            if (Vector3.Distance(lastUpdatedPosition, position) > ChunkHorizontalSize)
             {
                 Vector3Int playerPos = new Vector3Int(
-                    Mathf.FloorToInt(position.x / ChunkSize) * ChunkSize,
-                    Mathf.FloorToInt(position.y / ChunkSize) * ChunkSize,
-                    Mathf.FloorToInt(position.z / ChunkSize) * ChunkSize
+                    Mathf.FloorToInt(position.x / ChunkHorizontalSize) * ChunkHorizontalSize,
+                    Mathf.FloorToInt(position.y / ChunkHorizontalSize) * ChunkHorizontalSize,
+                    Mathf.FloorToInt(position.z / ChunkHorizontalSize) * ChunkHorizontalSize
                 );
 
                 UpdateWorld(playerPos);
@@ -329,7 +336,7 @@ public class World : SingletonMonoBehaviour<World>
         OnWorldGenerationStep?.Invoke(this, new WorldGenerationStepEventArgs(message));
     }
 
-    public async void UpdateWorld(Vector3Int generateAround)
+    private async void UpdateWorld(Vector3Int generateAround)
     {
         OnWorldGenerationStart?.Invoke(this, EventArgs.Empty);
         WorldGenerationStepHandler("Loading more chunks!");
@@ -375,17 +382,11 @@ public class World : SingletonMonoBehaviour<World>
             stopwatch.Restart();
             worldGenerationData = await GenerateWorldGenerationDataAsync(generateAround, radius, parallelizationUtils.taskCancellationToken);
             stopwatch.Stop();
-            WorldGenerationStepHandler($"Calculated {worldGenerationData.chunkDataPositionsToCreate.Count} data positions and {worldGenerationData.chunkPositionsToCreate.Count} chunk positions in {stopwatch.ElapsedMilliseconds} ms");
+            WorldGenerationStepHandler($"Calculated {worldGenerationData.chunkDataPositionsToCreate.Count} data positions and {worldGenerationData.prioritizedChunkPositions.Count} chunk positions in {stopwatch.ElapsedMilliseconds} ms");
         }
         catch (OperationCanceledException)
         {
             WorldGenerationStepHandler("GenerateWorldGenerationData task canceled!");
-            return;
-        }
-
-        if (worldGenerationData == null)
-        {
-            WorldGenerationStepHandler("Failed to generate WorldGenerationData, aborting world generation!");
             return;
         }
         
@@ -407,7 +408,7 @@ public class World : SingletonMonoBehaviour<World>
             WorldGenerationStepHandler($"Generating chunk data...");
             WorldGenerationLogger.ClearChunkGenerationDetails();
             stopwatch.Restart();
-            chunkDataDictionary = await GenerateChunkDataParallelAsync(worldGenerationData.chunkDataPositionsToCreate);
+            chunkDataDictionary = await GenerateChunkDataParallelAsync(worldGenerationData.chunkDataPositionsToCreate); // TODO: Put chunk data directly in worldData.chunkDataDictionary
             stopwatch.Stop();
             WorldGenerationStepHandler($"Generated {worldGenerationData.chunkDataPositionsToCreate.Count} chunks in {stopwatch.ElapsedMilliseconds} ms\n" +
                                        $"Time spent in SelectBiome: {WorldGenerationLogger.GetSelectBiomeDetails}\n" +
@@ -422,16 +423,16 @@ public class World : SingletonMonoBehaviour<World>
 
         WorldGenerationStepHandler($"Instantiating chunks...");
         stopwatch.Restart();
-        foreach (var (chunkPosition, chunkData) in chunkDataDictionary)
+        foreach ((Vector3Int chunkPosition, ChunkData chunkData) in chunkDataDictionary)
         {
             worldData.chunkDataDictionary.TryAdd(chunkPosition, chunkData);
         }
 
-        foreach (Vector3Int position in worldGenerationData.chunkPositionsToCreate)
+        foreach (PrioritizedPosition prioritizedPosition in worldGenerationData.prioritizedChunkPositions)
         {
-            if(worldData.chunkDataDictionary.TryGetValue(position, out ChunkData data))
+            if(worldData.chunkDataDictionary.TryGetValue(prioritizedPosition.position, out ChunkData data))
             {
-                worldData.chunkDictionary.TryAdd(position, CreateChunk(position, data));
+                worldData.chunkDictionary.TryAdd(prioritizedPosition.position, CreateChunk(prioritizedPosition.position, data));
             }
         }
         stopwatch.Stop();
@@ -441,9 +442,9 @@ public class World : SingletonMonoBehaviour<World>
         {
             WorldGenerationStepHandler($"Generating meshes...");
             stopwatch.Restart();
-            meshDataDictionary = await GenerateMeshDataParallelAsync(worldGenerationData.chunkPositionsToCreate);
+            meshDataDictionary = await GenerateMeshDataParallelAsync(worldGenerationData.prioritizedChunkPositions);
             stopwatch.Stop();
-            WorldGenerationStepHandler($"Generated {worldGenerationData.chunkPositionsToCreate.Count} meshes in {stopwatch.ElapsedMilliseconds} ms");
+            WorldGenerationStepHandler($"Generated {worldGenerationData.prioritizedChunkPositions.Count} meshes in {stopwatch.ElapsedMilliseconds} ms");
         }
         catch (OperationCanceledException)
         {
@@ -500,15 +501,17 @@ public class World : SingletonMonoBehaviour<World>
             }, parallelizationUtils.taskCancellationToken);
     }
 
-    private Task<ConcurrentDictionary<Vector3Int, MeshData>> GenerateMeshDataParallelAsync(List<Vector3Int> chunkPositionsToCreate)
+    private Task<ConcurrentDictionary<Vector3Int, MeshData>> GenerateMeshDataParallelAsync(List<PrioritizedPosition> prioritizedPositions)
     {
         ConcurrentDictionary<Vector3Int, MeshData> meshDataDictionary = new ConcurrentDictionary<Vector3Int, MeshData>();
 
         return Task.Run(() =>
             {
-                Parallel.ForEach(chunkPositionsToCreate, parallelizationUtils.parallelOptions, (position) =>
+                Parallel.ForEach(prioritizedPositions, parallelizationUtils.parallelOptions, (prioritizedPosition) =>
                 {
-                    if(worldData.chunkDataDictionary.TryGetValue(position, out ChunkData chunkData))
+                    parallelizationUtils.taskCancellationToken.ThrowIfCancellationRequested();
+                    
+                    if(worldData.chunkDataDictionary.TryGetValue(prioritizedPosition.position, out ChunkData chunkData))
                     {
                         MeshData meshData = CalculateMeshData(chunkData);
                         meshDataDictionary.TryAdd(chunkData.worldPosition, meshData);
@@ -523,7 +526,7 @@ public class World : SingletonMonoBehaviour<World>
 
     private Chunk CreateChunk(Vector3Int chunkPosition, ChunkData chunkData)
     {
-        Chunk newChunk = Instantiate(chunkPrefab, new Vector3(chunkPosition.x, chunkPosition.y, chunkPosition.z), Quaternion.identity, chunkParent);
+        Chunk newChunk = Instantiate(chunkPrefab, new Vector3(chunkPosition.x, chunkPosition.y, chunkPosition.z), Quaternion.identity, chunkParent); // TODO: Use chunkPosition
         newChunk.name = $"Chunk {chunkPosition.x}, {chunkPosition.y}, {chunkPosition.z}";
         newChunk.InitializeChunk(chunkData);
         return newChunk;
@@ -538,42 +541,45 @@ public class World : SingletonMonoBehaviour<World>
             Destroy(chunk.gameObject);
         }
     }
-
-    private Chunk GetChunk(Vector3Int chunkPos)
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private Vector3Int BlockPositionToChunkPosition(Vector3Int blockPosition)
     {
-        const float multiple = ChunkSize;
-        chunkPos.x = Mathf.FloorToInt(chunkPos.x / multiple ) * ChunkSize;
-        chunkPos.y = Mathf.FloorToInt(chunkPos.y / multiple ) * ChunkSize;
-        chunkPos.z = Mathf.FloorToInt(chunkPos.z / multiple ) * ChunkSize;
+        // FloorToInt of floating point division for correct negative positions
+        blockPosition.x = Mathf.FloorToInt(blockPosition.x / (float) ChunkHorizontalSize) * ChunkHorizontalSize;
+        blockPosition.y = Mathf.FloorToInt(blockPosition.y / (float) ChunkVerticalSize) * ChunkVerticalSize;
+        blockPosition.z = Mathf.FloorToInt(blockPosition.z / (float) ChunkHorizontalSize) * ChunkHorizontalSize;
+        
+        return blockPosition;
+    }
 
-        worldData.chunkDictionary.TryGetValue(chunkPos, out Chunk chunk);
+    private Chunk GetChunkFromBlockPosition(Vector3Int blockPosition)
+    {
+        Vector3Int chunkPosition = BlockPositionToChunkPosition(blockPosition);
+        worldData.chunkDictionary.TryGetValue(chunkPosition, out Chunk chunk);
   
         return chunk;
     }
 
-    private ChunkData GetChunkData(Vector3Int chunkPos)
+    private ChunkData GetChunkDataFromBlockPosition(Vector3Int blockPosition)
     {
-        const float multiple = ChunkSize;
-        chunkPos.x = Mathf.FloorToInt(chunkPos.x / multiple ) * ChunkSize;
-        chunkPos.y = Mathf.FloorToInt(chunkPos.y / multiple ) * ChunkSize;
-        chunkPos.z = Mathf.FloorToInt(chunkPos.z / multiple ) * ChunkSize;
-
-        worldData.chunkDataDictionary.TryGetValue(chunkPos, out ChunkData chunkData);
+        Vector3Int chunkPosition = BlockPositionToChunkPosition(blockPosition);
+        worldData.chunkDataDictionary.TryGetValue(chunkPosition, out ChunkData chunkData);
   
         return chunkData;
     }
 
-    public Block GetBlock(int worldCoordX, int worldCoordY, int worldCoordZ)
+    public Block GetBlock(int worldPositionX, int worldPositionY, int worldPositionZ)
     {
-        ChunkData containerChunkData = GetChunkData(new Vector3Int(worldCoordX, worldCoordY, worldCoordZ));
+        ChunkData containerChunkData = GetChunkDataFromBlockPosition(new Vector3Int(worldPositionX, worldPositionY, worldPositionZ));
 
         if (containerChunkData != null)
         {
             Block block = Chunk.GetBlock(
                 containerChunkData,
-                worldCoordX - containerChunkData.worldPosition.x,
-                worldCoordY -containerChunkData.worldPosition.y, 
-                worldCoordZ - containerChunkData.worldPosition.z);
+                worldPositionX - containerChunkData.worldPosition.x,
+                worldPositionY - containerChunkData.worldPosition.y, 
+                worldPositionZ - containerChunkData.worldPosition.z);
   
             return block;
         }
@@ -585,11 +591,11 @@ public class World : SingletonMonoBehaviour<World>
         }
     }
 
-    public void SetBlock(int worldCoordX, int worldCoordY, int worldCoordZ, Block block)
+    public void SetBlock(int worldPositionX, int worldPositionY, int worldPositionZ, Block block)
     {
-        Vector3Int worldPosition = new Vector3Int(worldCoordX, worldCoordY, worldCoordZ);
+        Vector3Int worldPosition = new Vector3Int(worldPositionX, worldPositionY, worldPositionZ);
         
-        Chunk chunk = GetChunk(worldPosition);
+        Chunk chunk = GetChunkFromBlockPosition(worldPosition);
         if (chunk)
         {
             Vector3Int localPosition = worldPosition - chunk.Data.worldPosition;
@@ -601,7 +607,7 @@ public class World : SingletonMonoBehaviour<World>
             {
                 UpdateNeighbouringChunk(worldPosition + Vector3Int.left);
             }
-            else if (localPosition.x is ChunkSize - 1)
+            else if (localPosition.x is ChunkHorizontalSize - 1)
             {
                 UpdateNeighbouringChunk(worldPosition + Vector3Int.right);
             }
@@ -610,7 +616,7 @@ public class World : SingletonMonoBehaviour<World>
             {
                 UpdateNeighbouringChunk(worldPosition + Vector3Int.down);
             }
-            else if (localPosition.y is ChunkSize - 1)
+            else if (localPosition.y is ChunkVerticalSize - 1)
             {
                 UpdateNeighbouringChunk(worldPosition + Vector3Int.up);
             }
@@ -619,7 +625,7 @@ public class World : SingletonMonoBehaviour<World>
             {
                 UpdateNeighbouringChunk(worldPosition + Vector3Int.back);
             }
-            else if (localPosition.z is ChunkSize - 1)
+            else if (localPosition.z is ChunkHorizontalSize - 1)
             {
                 UpdateNeighbouringChunk(worldPosition + Vector3Int.forward);
             }
@@ -627,7 +633,7 @@ public class World : SingletonMonoBehaviour<World>
         
         void UpdateNeighbouringChunk(Vector3Int neighbouringWorldPosition)
         {
-            Chunk neighbouringChunk = GetChunk(neighbouringWorldPosition);
+            Chunk neighbouringChunk = GetChunkFromBlockPosition(neighbouringWorldPosition);
             if (neighbouringChunk)
             {
                 neighbouringChunk.UpdateChunk();
@@ -635,6 +641,8 @@ public class World : SingletonMonoBehaviour<World>
         }
     }
 
+    #region Coroutines
+    
     private IEnumerator RenderChunksRoutine(ConcurrentDictionary<Vector3Int, MeshData> meshDataDictionary, List<PrioritizedPosition> chunkPositionsToRender)
     {
         void PlaceVegetation(int x, int y, int z, Block block, Chunk chunk, Vegetation.VegetationData vegetationData)
@@ -669,9 +677,9 @@ public class World : SingletonMonoBehaviour<World>
                 if (worldData.chunkDictionary.TryGetValue(positionPriority.position, out Chunk chunk))
                 {
                     chunk.UpdateChunk(meshData);
-                    IterateOverBlocks(chunk.Data, (x, y, z) =>
+                    IterateOverBlockPositions(chunk.Data, (x, y, z) =>
                     {
-                        Block block = chunk.Data.blocks[x, y, z];
+                        Block block = chunk.Data.blocks[x][z][y];
                         if (block.vegetation.HasValue)
                         {
                             PlaceVegetation(x, y, z, block, chunk, block.vegetation.Value);
@@ -694,4 +702,6 @@ public class World : SingletonMonoBehaviour<World>
         
         OnWorldGenerationFinish?.Invoke(this, EventArgs.Empty);
     }
+    
+    #endregion
 }

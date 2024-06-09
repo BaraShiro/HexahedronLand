@@ -55,8 +55,8 @@ public class Block
         
     }
 
-    public static readonly string DebugBlockName = "Debug";
-    public static readonly string VoidBlockName = "Void";
+    public const string DebugBlockName = "Debug";
+    public const string VoidBlockName = "Void";
     private static readonly TextureTilePosition DebugTilePosition = new TextureTilePosition(0, 0);
     private static readonly BlockData DebugBlockData = new BlockData()
     {
@@ -212,10 +212,10 @@ public class Block
         Vector2[] UVs = new Vector2[4];
         TextureTilePosition textureTilePosition = TexturePosition(direction);
 
-        UVs[0] = new Vector2(tileSize * textureTilePosition.x + offset, tileSize * textureTilePosition.y + offset); // LowerLeft
-        UVs[1] = new Vector2(tileSize * textureTilePosition.x + offset, tileSize * textureTilePosition.y + tileSize - offset); // UpperLeft
-        UVs[2] = new Vector2(tileSize * textureTilePosition.x + tileSize - offset, tileSize * textureTilePosition.y + tileSize - offset); // UpperRight
-        UVs[3] = new Vector2(tileSize * textureTilePosition.x + tileSize - offset, tileSize * textureTilePosition.y + offset); // LowerRight
+        UVs[0] = new Vector2(TileSize * textureTilePosition.x + Offset, TileSize * textureTilePosition.y + Offset); // LowerLeft
+        UVs[1] = new Vector2(TileSize * textureTilePosition.x + Offset, TileSize * textureTilePosition.y + TileSize - Offset); // UpperLeft
+        UVs[2] = new Vector2(TileSize * textureTilePosition.x + TileSize - Offset, TileSize * textureTilePosition.y + TileSize - Offset); // UpperRight
+        UVs[3] = new Vector2(TileSize * textureTilePosition.x + TileSize - Offset, TileSize * textureTilePosition.y + Offset); // LowerRight
 
         return UVs;
     }

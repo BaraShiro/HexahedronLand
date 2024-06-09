@@ -23,7 +23,7 @@ public class SurfaceBiomeGenerator : BiomeGenerator
 
         int surfaceHeight = rockHeight + dirtOffset;
         
-        for (int y = chunkData.worldPosition.y; y < chunkData.worldPosition.y + Chunk.ChunkData.ChunkSize; y++)
+        for (int y = chunkData.worldPosition.y; y < chunkData.worldPosition.y + Chunk.ChunkData.ChunkVerticalSize; y++)
         {
             BlockLayerHandler.LayerData layerData = new BlockLayerHandler.LayerData(
                 rockHeight, 
