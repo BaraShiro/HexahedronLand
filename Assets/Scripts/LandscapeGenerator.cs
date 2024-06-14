@@ -1,6 +1,5 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Unity.Mathematics;
@@ -8,7 +7,7 @@ using Debug = UnityEngine.Debug;
 
 public class LandscapeGenerator : MonoBehaviour
 {
-    private struct BiomeData
+    private readonly ref struct BiomeData
     {
         public readonly Vector2Int center;
         public readonly float distance;
@@ -24,12 +23,12 @@ public class LandscapeGenerator : MonoBehaviour
         }
     }
     
-    private struct BiomeCenters
+    private readonly ref struct BiomeCenters
     {
-        public BiomeData northWestBiome;
-        public BiomeData northEastBiome;
-        public BiomeData southWestBiome;
-        public BiomeData southEastBiome;
+        public readonly BiomeData northWestBiome;
+        public readonly BiomeData northEastBiome;
+        public readonly BiomeData southWestBiome;
+        public readonly BiomeData southEastBiome;
 
         public BiomeCenters(BiomeData northWestBiome, BiomeData northEastBiome, BiomeData southWestBiome, BiomeData southEastBiome)
         {
@@ -39,15 +38,20 @@ public class LandscapeGenerator : MonoBehaviour
             this.southEastBiome = southEastBiome;
         }
 
-        public BiomeData GetClosest(Vector2Int point)
+        public BiomeData GetClosest()
         {
-            (float distance, BiomeData data) nw = (Vector2Int.Distance(northWestBiome.center, point), northWestBiome);
-            (float distance, BiomeData data) ne = (Vector2Int.Distance(northEastBiome.center, point), northEastBiome);
-            (float distance, BiomeData data) se = (Vector2Int.Distance(southEastBiome.center, point), southEastBiome);
-            (float distance, BiomeData data) sw = (Vector2Int.Distance(southWestBiome.center, point), southWestBiome);
-            (float distance, BiomeData data) n = nw.distance < ne.distance ? nw : ne;
-            (float distance, BiomeData data) s = se.distance < sw.distance ? se : sw;
-            return n.distance < s.distance ? n.data : s.data;
+            BiomeData northData = northWestBiome.distance < northEastBiome.distance ? northWestBiome : northEastBiome;
+            BiomeData southData = southWestBiome.distance < southEastBiome.distance ? southWestBiome : southEastBiome;
+
+            return northData.distance < southData.distance ? northData : southData;
+        }
+
+        public override string ToString()
+        {
+            return $"NW: pos: {northWestBiome.center} dist: {northWestBiome.distance}, " +
+                   $"NE: pos: {northEastBiome.center} dist: {northEastBiome.distance}, " +
+                   $"SW: pos: {southWestBiome.center} dist: {southWestBiome.distance}, " +
+                   $"SE: pos: {southEastBiome.center} dist: {southEastBiome.distance}";
         }
     }
 
@@ -57,11 +61,12 @@ public class LandscapeGenerator : MonoBehaviour
     [SerializeReference] private BiomeClimateData biomeClimateData = new BiomeClimateData(1,1);
     public bool useDomainWarping = true;
 
-    public const int BiomeSize = 8 * Chunk.ChunkData.ChunkHorizontalSize;
+    private const int BiomeSize = Chunk.ChunkData.ChunkHorizontalSize * Chunk.ChunkData.ChunkHorizontalSize;
+    // TODO: BiomeRadius should be relative to draw distance, if blocks are created outside of the biome grid behaviour is undefined
+    private const int BiomeRadius = 2;
 
     private Vector2Int currentBiomePosition = Vector2Int.zero;
     private List<Vector2Int> biomeCenterPoints = new List<Vector2Int>();
-    private ConcurrentDictionary<Vector2Int, BiomeData> biomes;
     private bool firstGeneration = true;
 
     private void SelectBiome(Vector2Int worldPosition, out SurfaceBiomeGenerator biomeGenerator, out int rockHeight, out int dirtHeight)
@@ -72,7 +77,7 @@ public class LandscapeGenerator : MonoBehaviour
             worldPosition += new Vector2Int(domainOffset.x, domainOffset.y);
         }
         
-        BiomeCenters biomeCenters =  CalculateBiomeData(worldPosition);
+        CalculateBiomeData(worldPosition, out BiomeCenters biomeCenters);
         
         float2x4 points = new float2x4
             (
@@ -99,27 +104,9 @@ public class LandscapeGenerator : MonoBehaviour
         float2 point = new float2(worldPosition.x, worldPosition.y);
         MathHelpers.InverseDistanceCubedWeighting(in point, in points, in heights, out float2 weightedHeights);
 
-        biomeGenerator = SelectBiomeGenerator(biomeCenters.GetClosest(new Vector2Int(worldPosition.x, worldPosition.y)));
+        biomeGenerator = SelectBiomeGenerator(biomeCenters.GetClosest());
         rockHeight = Mathf.RoundToInt(weightedHeights.x);
         dirtHeight = Mathf.RoundToInt(weightedHeights.y);
-    }
-
-    [ContextMenu("InverseTest")]
-    public void InverseTest()
-    {
-        float2 point = new float2(1f, 1f);
-        float2x4 points = new float2x4
-        (
-            new float2(0.5f, 0.9f), 
-            new float2(1.5f, 1.5f), 
-            new float2(1f, 0.5f), 
-            new float2(0.5f, 1.4f) 
-        );
-        float4 values = new float4 { x = 1f, y = 3f, z = 5f, w = 7f};
-
-        float result = MathHelpers.InverseDistanceWeighting(point, points , values);
-        Debug.Log(result);
-
     }
 
     public void GenerateChunkDataParallel(Chunk.ChunkData chunkData, ParallelOptions parallelOptions)
@@ -154,7 +141,7 @@ public class LandscapeGenerator : MonoBehaviour
         
     }
 
-    private BiomeCenters CalculateBiomeData(Vector2Int horizontalPosition)
+    private void CalculateBiomeData(Vector2Int horizontalPosition, out BiomeCenters centers)
     {
         Vector2Int northWestPoint = horizontalPosition;
         Vector2Int northEastPoint = horizontalPosition;
@@ -268,7 +255,7 @@ public class LandscapeGenerator : MonoBehaviour
                 in biomePrecipitationNoiseSettings.settingsData)
         );
 
-        return new BiomeCenters(northWestBiome, northEastBiome, southWestBiome, southEastBiome);
+        centers = new BiomeCenters(northWestBiome, northEastBiome, southWestBiome, southEastBiome);
     }
 
     private ref SurfaceBiomeGenerator SelectBiomeGenerator(in BiomeData biomeData)
@@ -278,7 +265,7 @@ public class LandscapeGenerator : MonoBehaviour
 
     #region BiomeCenters
 
-    public static Vector2Int BiomePosition(Vector3Int worldPosition)
+    public static Vector2Int WorldPositionToBiomePosition(Vector3Int worldPosition)
     {
         Vector2Int biomePosition = new Vector2Int(
             (worldPosition.x / BiomeSize) * BiomeSize,
@@ -286,9 +273,9 @@ public class LandscapeGenerator : MonoBehaviour
         return biomePosition;
     }
 
-    public void GenerateBiomePoints(Vector3Int generateAround, int radius)
+    public void UpdateBiomeCenterPoints(Vector3Int generateAround)
     {
-        Vector2Int biomePosition = BiomePosition(generateAround);
+        Vector2Int biomePosition = WorldPositionToBiomePosition(generateAround);
         
         if (currentBiomePosition == biomePosition && !firstGeneration)
         {
@@ -301,7 +288,7 @@ public class LandscapeGenerator : MonoBehaviour
         Debug.Log("In new biome, calculate new centers");
         currentBiomePosition = biomePosition;
 
-        biomeCenterPoints = CalculateBiomeCenters(currentBiomePosition, radius);
+        biomeCenterPoints = CalculateBiomeCenters(currentBiomePosition);
         
         // if(useDomainWarping)
         // {
@@ -316,16 +303,16 @@ public class LandscapeGenerator : MonoBehaviour
         
     }
 
-    private List<Vector2Int> CalculateBiomeCenters(Vector2Int biomePosition, int radius)
+    private List<Vector2Int> CalculateBiomeCenters(Vector2Int biomePosition)
     {
         // Set capacity to number of points to add to avoid resize
-        int capacity1D = (radius * 2) + 1;
-        int capacity2D = capacity1D * capacity1D;
+        const int capacity1D = (BiomeRadius * 2) + 1;
+        const int capacity2D = capacity1D * capacity1D;
         List<Vector2Int> centerPoints = new List<Vector2Int>(capacity2D);
 
-        for (int x = -radius; x <= radius; x++)
+        for (int x = -BiomeRadius; x <= BiomeRadius; x++)
         {
-            for (int z = -radius; z <= radius; z++)
+            for (int z = -BiomeRadius; z <= BiomeRadius; z++)
             {
                 centerPoints.Add(new Vector2Int(biomePosition.x + x * BiomeSize, biomePosition.y + z * BiomeSize));
             }

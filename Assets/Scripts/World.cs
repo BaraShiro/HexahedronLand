@@ -459,7 +459,7 @@ public class World : SingletonMonoBehaviour<World>
     {
         return Task.Run(() =>
         {
-            landscapeGenerator.GenerateBiomePoints(generateAround, 2);
+            landscapeGenerator.UpdateBiomeCenterPoints(generateAround);
             token.ThrowIfCancellationRequested();
         }, token);
     }
