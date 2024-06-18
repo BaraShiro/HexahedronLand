@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 758549dc0b32f0346a9284591f327b5f, type: 3}
   m_Name: BorealForestVegetation
   m_EditorClassIdentifier: 
-  treeLayer: []
+  treeLayer:
+  - {fileID: 6426542948595511348, guid: 0301fb8873eaf7a47a3374d5adabccfc, type: 3}
   shrubLayer: []
-  herbLayer: []
+  herbLayer:
+  - {fileID: -8462498996013878169, guid: b89cf6fe402a1dd428d02df98d3b510a, type: 3}

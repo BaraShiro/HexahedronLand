@@ -17,8 +17,8 @@ MonoBehaviour:
       x: 0
       y: 0
       z: 0
-    noiseScale: 0.1
-    octaves: 1
+    noiseScale: 0.423
+    octaves: 4
     persistence: 0.5
   useEasing: 0
   redistributionModifier: 1.2

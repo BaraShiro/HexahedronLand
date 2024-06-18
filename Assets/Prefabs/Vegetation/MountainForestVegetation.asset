@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 758549dc0b32f0346a9284591f327b5f, type: 3}
   m_Name: MountainForestVegetation
   m_EditorClassIdentifier: 
-  treeLayer: []
+  treeLayer:
+  - {fileID: 4859893995167117604, guid: 8bd196e8f1060d642b17ece5eb9f7bd7, type: 3}
   shrubLayer: []
-  herbLayer: []
+  herbLayer:
+  - {fileID: -8462498996013878169, guid: 2a3fd21025c23f94e983e76c1864e4c5, type: 3}

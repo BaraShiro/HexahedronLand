@@ -14,4 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   treeLayer: []
   shrubLayer: []
-  herbLayer: []
+  herbLayer:
+  - {fileID: -8462498996013878169, guid: c7cdf60081493db428f92d2c319ad202, type: 3}
