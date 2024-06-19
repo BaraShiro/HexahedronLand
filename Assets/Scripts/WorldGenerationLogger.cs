@@ -1,15 +1,20 @@
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
-using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 public static class WorldGenerationLogger
 {
+
+    private const long ns = 1000000000;
+    private const long μs = 1000000;
+    private const long ms = 1000;
     public static readonly ConcurrentBag<long> SelectBiomeTicks = new ConcurrentBag<long>();
     public static readonly ConcurrentBag<long> HandleLayerTicks = new ConcurrentBag<long>();
     
-    public static string GetSelectBiomeDetails => $"Count: {SelectBiomeTicks.Count} Sum: {SelectBiomeTicks.Sum()} Average: {(SelectBiomeTicks.IsEmpty ? 0.0 : SelectBiomeTicks.Average())}";
-    public static string GetHandleLayerDetails => $"Count: {HandleLayerTicks.Count} Sum: {HandleLayerTicks.Sum()} Average: {(HandleLayerTicks.IsEmpty ? 0.0 : HandleLayerTicks.Average())}";
+    public static string GetSelectBiomeDetails => $"Columns: {SelectBiomeTicks.Count}, Total time: {(ms * SelectBiomeTicks.Sum()) / Stopwatch.Frequency} ms, Average time: {(SelectBiomeTicks.IsEmpty ? 0.0 : (SelectBiomeTicks.Average() / Stopwatch.Frequency) * μs)} μs";
+    public static string GetHandleLayerDetails => $"Columns: {HandleLayerTicks.Count}, Total time: {(ms * HandleLayerTicks.Sum()) / Stopwatch.Frequency} ms, Average time: {(HandleLayerTicks.IsEmpty ? 0.0 : (HandleLayerTicks.Average() / Stopwatch.Frequency) * μs)} μs";
     
     private static readonly ConcurrentQueue<string> Log = new ConcurrentQueue<string>();
 

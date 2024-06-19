@@ -119,7 +119,7 @@ public class LandscapeGenerator : MonoBehaviour
             Parallel.For(chunkData.worldPosition.z, chunkData.worldPosition.z + Chunk.ChunkData.ChunkHorizontalSize, parallelOptions, (z) =>
             {
                 Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Restart();
+                stopwatch.Start();
                 
                 SelectBiome(new Vector2Int(capturedX, z), out SurfaceBiomeGenerator biomeGenerator, out int rockHeight, out int dirtHeight);
                 
