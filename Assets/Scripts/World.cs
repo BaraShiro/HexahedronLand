@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Unity.Mathematics;
 using UnityEngine;
 using static Chunk;
 using static Chunk.ChunkData;
@@ -232,7 +233,9 @@ public class World : SingletonMonoBehaviour<World>
     [SerializeField] private Chunk chunkPrefab;
     [SerializeField] private PlayerController playerPrefab;
     private PlayerController player;
-    private Vector3 lastUpdatedPosition;
+    private readonly float updateDelay = 2f;
+    private float timeSinceLastUpdate = 0f;
+    private bool doneUpdating = false;
 
     [SerializeField] private Vector3Int initialPoint = Vector3Int.zero; // TODO: load initial world spawn point from save file
     
@@ -288,6 +291,7 @@ public class World : SingletonMonoBehaviour<World>
         OnWorldGenerationStart += WorldGenerationLogger.WorldGenerationStart;
         OnWorldGenerationStep += WorldGenerationLogger.AddStepToLog;
         OnWorldGenerationFinish += SpawnPlayer;
+        OnWorldGenerationFinish += MarkUpdateFinished;
 
         GenerateWorld();
     }
@@ -299,21 +303,25 @@ public class World : SingletonMonoBehaviour<World>
 
     private void FixedUpdate()
     {
-        if (player) // TODO: use event
-        {
-            Vector3 position = player.GetPlayerPosition();
-            if (Vector3.Distance(lastUpdatedPosition, position) > ChunkHorizontalSize)
-            {
-                Vector3Int playerPos = new Vector3Int(
-                    Mathf.FloorToInt(position.x / ChunkHorizontalSize) * ChunkHorizontalSize,
-                    Mathf.FloorToInt(position.y / ChunkHorizontalSize) * ChunkHorizontalSize,
-                    Mathf.FloorToInt(position.z / ChunkHorizontalSize) * ChunkHorizontalSize
-                );
 
-                UpdateWorld(playerPos);
-                lastUpdatedPosition = position;
+        if (doneUpdating && timeSinceLastUpdate >= updateDelay)
+        {
+            if (player)
+            {
+                timeSinceLastUpdate = 0f;
+                Vector3 position = player.GetPlayerPosition();
+                UpdateWorld(position);
             }
         }
+        else
+        {
+            timeSinceLastUpdate += Time.fixedDeltaTime;
+        }
+    }
+
+    private void MarkUpdateFinished(object sender, EventArgs e)
+    {
+        doneUpdating = true;
     }
 
     private void SpawnPlayer(object sender, EventArgs e)
@@ -336,14 +344,13 @@ public class World : SingletonMonoBehaviour<World>
         OnWorldGenerationStep?.Invoke(this, new WorldGenerationStepEventArgs(message));
     }
 
-    private async void UpdateWorld(Vector3Int generateAround)
+    private void UpdateWorld(Vector3 generateAround)
     {
-        OnWorldGenerationStart?.Invoke(this, EventArgs.Empty);
-        WorldGenerationStepHandler("Loading more chunks!");
-        await GenerateWorld(generateAround, drawRange);
+        // Update world asynchronously
+        UpdateWorld(generateAround, drawRange);
     }
 
-    public async void UpdateWorld(Vector3Int generateAround, int radius)
+    private async void UpdateWorld(Vector3 generateAround, int radius)
     {
         OnWorldGenerationStart?.Invoke(this, EventArgs.Empty);
         WorldGenerationStepHandler("Loading more chunks!");
@@ -356,15 +363,22 @@ public class World : SingletonMonoBehaviour<World>
         await GenerateWorld(initialPoint, drawRange);
     }
 
-    private async Task GenerateWorld(Vector3Int generateAround, int radius)
+    private async Task GenerateWorld(Vector3 centerPosition, int radius)
     {
+        doneUpdating = false;
+        Vector3Int centerChunkPosition = new Vector3Int(
+            Mathf.FloorToInt(centerPosition.x / ChunkHorizontalSize) * ChunkHorizontalSize,
+            Mathf.FloorToInt(centerPosition.y / ChunkVerticalSize) * ChunkVerticalSize,
+            Mathf.FloorToInt(centerPosition.z / ChunkHorizontalSize) * ChunkHorizontalSize
+        );
+
         Stopwatch stopwatch = new Stopwatch();
         
         try
         {
-            WorldGenerationStepHandler($"Generating biome points around point {generateAround}...");
+            WorldGenerationStepHandler($"Generating biome points around point {centerChunkPosition}...");
             stopwatch.Restart();
-            await GenerateBiomePointsAsync(generateAround, parallelizationUtils.taskCancellationToken);
+            await GenerateBiomePointsAsync(centerChunkPosition, parallelizationUtils.taskCancellationToken);
             stopwatch.Stop();
             WorldGenerationStepHandler($"Generated biome points in {stopwatch.ElapsedMilliseconds} ms");
         }
@@ -380,7 +394,7 @@ public class World : SingletonMonoBehaviour<World>
         {
             WorldGenerationStepHandler($"Calculating world generation data...");
             stopwatch.Restart();
-            worldGenerationData = await GenerateWorldGenerationDataAsync(generateAround, radius, parallelizationUtils.taskCancellationToken);
+            worldGenerationData = await GenerateWorldGenerationDataAsync(centerChunkPosition, radius, parallelizationUtils.taskCancellationToken);
             stopwatch.Stop();
             WorldGenerationStepHandler($"Calculated {worldGenerationData.chunkDataPositionsToCreate.Count} data positions and {worldGenerationData.prioritizedChunkPositions.Count} chunk positions in {stopwatch.ElapsedMilliseconds} ms");
         }
@@ -389,17 +403,31 @@ public class World : SingletonMonoBehaviour<World>
             WorldGenerationStepHandler("GenerateWorldGenerationData task canceled!");
             return;
         }
-        
+
         foreach (Vector3Int position in worldGenerationData.chunkPositionsToRemove)
         {
-            DestroyChunk(position);
+            if (worldGenerationData.chunkDataPositionsToRemove.Contains(position))
+            {
+                Debug.LogWarning($"Found chunk pos {position} in chunk data");
+                worldGenerationData.chunkDataPositionsToRemove.Remove(position);
+            }
+
+            if (worldData.chunkDictionary.TryRemove(position, out Chunk chunk))
+            {
+                worldData.chunkDataDictionary.TryRemove(position, out ChunkData data);
+                Serialization.SaveChunk(chunk.Data);
+                Chunk.ReleaseChunk(chunk);
+            }
         }
-        
+
         foreach (Vector3Int position in worldGenerationData.chunkDataPositionsToRemove)
         {
-            worldData.chunkDataDictionary.TryRemove(position, out _);
+            if (worldData.chunkDataDictionary.TryRemove(position, out ChunkData data))
+            {
+                ChunkData.ReleaseChunkData(data);
+            }
         }
-        
+
         ConcurrentDictionary<Vector3Int, ChunkData> chunkDataDictionary;
         ConcurrentDictionary<Vector3Int, MeshData> meshDataDictionary;
 
@@ -489,7 +517,7 @@ public class World : SingletonMonoBehaviour<World>
                 {
                     parallelizationUtils.taskCancellationToken.ThrowIfCancellationRequested();
                     
-                    ChunkData chunkData = new ChunkData(this, position);
+                    ChunkData chunkData = ChunkData.AcquireChunkData(this, position);
                     chunkDataDictionary.TryAdd(position, chunkData);
                     landscapeGenerator.GenerateChunkDataParallel(chunkData, parallelizationUtils.parallelOptions);
                     Serialization.LoadChunk(ref chunkData);
@@ -526,20 +554,8 @@ public class World : SingletonMonoBehaviour<World>
 
     private Chunk CreateChunk(Vector3Int chunkPosition, ChunkData chunkData)
     {
-        Chunk newChunk = Instantiate(chunkPrefab, new Vector3(chunkPosition.x, chunkPosition.y, chunkPosition.z), Quaternion.identity, chunkParent); // TODO: Use chunkPosition
-        newChunk.name = $"Chunk {chunkPosition.x}, {chunkPosition.y}, {chunkPosition.z}";
-        newChunk.InitializeChunk(chunkData);
+        Chunk newChunk = Chunk.AcquireChunk(chunkData, chunkPrefab, chunkPosition, Quaternion.identity, chunkParent);
         return newChunk;
-    }
-
-    private void DestroyChunk(Vector3Int chunkPosition)
-    {
-        if (worldData.chunkDictionary.TryGetValue(chunkPosition, out Chunk chunk))
-        {
-            Serialization.SaveChunk(chunk.Data);
-            worldData.chunkDictionary.TryRemove(chunkPosition, out _);
-            Destroy(chunk.gameObject);
-        }
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Concurrent;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEditor;
 using UnityEngine;
@@ -10,14 +12,17 @@ public class Chunk : MonoBehaviour
 {
     public class ChunkData
     {
+        private static readonly ConcurrentQueue<ChunkData> chunkDataObjectPool = new ConcurrentQueue<ChunkData>();
+
         public const int ChunkHorizontalSize = 16;
         public const int ChunkVerticalSize = 64;
         
         public readonly Block[][][] blocks = new Block[ChunkHorizontalSize][][];
 
-        public readonly World world;
-        public readonly Vector3Int worldPosition;
-        public ChunkData(World world, Vector3Int worldPosition)
+        public World world;
+        public Vector3Int worldPosition;
+
+        private ChunkData(World world, Vector3Int worldPosition)
         {
             this.world = world;
             this.worldPosition = worldPosition;
@@ -31,7 +36,63 @@ public class Chunk : MonoBehaviour
                 }
             }
         }
+
+        #region Chunk Data Object Pool
+
+        public static ChunkData AcquireChunkData(World world, Vector3Int position)
+        {
+            ChunkData data;
+            if (chunkDataObjectPool.IsEmpty)
+            {
+                data = new ChunkData(world, position);
+            }
+            else
+            {
+                if (chunkDataObjectPool.TryDequeue(out data))
+                {
+                    data.world = world;
+                    data.worldPosition = position;
+                    // Debug.Log($"Pulled chunk data {position} from pool");
+                }
+                else
+                {
+                    data =  new ChunkData(world, position);
+                }
+            }
+
+            return data;
+        }
+
+        public static void ReleaseChunkData(ChunkData data)
+        {
+            if (chunkDataObjectPool.Contains(data))
+            {
+                Debug.LogError($"Data {data.worldPosition} already in pool");
+                return;
+            }
+
+            for (int x = 0; x < ChunkHorizontalSize; x++)
+            {
+                for (int y = 0; y < ChunkHorizontalSize; y++)
+                {
+                    for (int z = 0; z < ChunkVerticalSize; z++)
+                    {
+                        data.blocks[x][y][z] = null;
+                    }
+                }
+            }
+
+            data.world = null;
+            data.worldPosition = Vector3Int.zero;
+            chunkDataObjectPool.Enqueue(data);
+            // Debug.Log($"Returning chunk data {data.worldPosition} to pool");
+
+        }
+
+        #endregion
     }
+
+    private static readonly ConcurrentQueue<Chunk> chunkObjectPool = new ConcurrentQueue<Chunk>();
     
     public const float TileSize = 0.125f; // TODO: Make changeable in inspector somehow
     public const float Offset = 0.001f; // Compensate for floating point rounding errors
@@ -49,12 +110,11 @@ public class Chunk : MonoBehaviour
 
     private void OnApplicationQuit()
     {
-        Serialization.SaveChunk(this.Data);
-    }
-    
-    public void InitializeChunk(ChunkData chunkData)
-    {
-        this.Data = chunkData;
+        // Only save active chunks, not inactive chunks as they are pooled
+        if (gameObject && gameObject.activeSelf)
+        {
+            Serialization.SaveChunk(Data);
+        }
     }
 
     public void UpdateChunk(MeshData meshData)
@@ -88,7 +148,66 @@ public class Chunk : MonoBehaviour
   
         meshCollider.sharedMesh = colliderSharedMesh;
     }
-    
+
+    private void ClearMeshes()
+    {
+        meshFilter.mesh.Clear();
+        meshCollider.sharedMesh = null;
+    }
+
+    private void ClearFoliage()
+    {
+        foreach (Transform child in gameObject.transform)
+        {
+            Destroy(child.gameObject);
+        }
+    }
+
+    #region Chunk Object Pool
+
+    public static Chunk AcquireChunk(ChunkData chunkData, Chunk prefab, Vector3Int position, Quaternion rotation, Transform parent)
+    {
+        Chunk newChunk;
+
+        if (chunkObjectPool.IsEmpty)
+        {
+            newChunk = Instantiate(prefab, position, rotation, parent);
+        }
+        else
+        {
+            if (chunkObjectPool.TryDequeue(out newChunk))
+            {
+                newChunk.transform.position = position;
+                newChunk.transform.rotation = rotation;
+                newChunk.transform.parent = parent;
+                newChunk.gameObject.SetActive(true);
+                // Debug.Log($"Pulled chunk {position} from pool");
+            }
+            else
+            {
+                newChunk = Instantiate(prefab, position, rotation, parent);
+            }
+        }
+
+        newChunk.name = $"Chunk {position.x}, {position.y}, {position.z}";
+        newChunk.Data = chunkData;
+
+        return newChunk;
+    }
+
+    public static void ReleaseChunk(Chunk chunk)
+    {
+        // Debug.Log($"Returning chunk {chunk.Data.worldPosition} to pool");
+        ChunkData.ReleaseChunkData(chunk.Data);
+        chunk.Data = null;
+        chunk.ClearMeshes();
+        chunk.ClearFoliage();
+        chunk.gameObject.name = "Chunk (Pooled)";
+        chunk.gameObject.SetActive(false);
+        chunkObjectPool.Enqueue(chunk);
+    }
+
+    #endregion
     
     #region Static functions
     
