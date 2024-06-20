@@ -7,18 +7,19 @@ using System.Runtime.CompilerServices;
 public static class Serialization
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static string SaveLocation(Vector3Int chunkLocation)
+    private static string GetSaveFilePath(Vector3Int chunkPosition)
     {
-        string saveLocation = Path.Combine(World.Instance.persistentDataPath, World.Instance.worldName);
+        string validWorldName = World.Instance.worldName.ReplaceInvalidPathChars("_");
+        string savePath = Path.Combine(World.Instance.persistentDataPath, validWorldName);
 
-        if (!Directory.Exists(saveLocation))
+        if (!Directory.Exists(savePath))
         {
-            Directory.CreateDirectory(saveLocation);
+            Directory.CreateDirectory(savePath);
         }
 
-        saveLocation = Path.Combine(saveLocation, $"{chunkLocation.x},{chunkLocation.y},{chunkLocation.z}.chunk");
+        string fullSavePath = Path.Combine(savePath, $"{chunkPosition.x},{chunkPosition.y},{chunkPosition.z}.chunk");
         
-        return saveLocation;
+        return fullSavePath;
     }
 
     public static bool SaveChunk(in Chunk.ChunkData chunkData)
@@ -26,11 +27,11 @@ public static class Serialization
         SavedChunk savedChunk = new SavedChunk(in chunkData);
         if (savedChunk.blocks.Count == 0)
         {
-            return true; // Nothing has changed, so nothing to save
+            // Nothing has changed, so nothing to save
+            return true;
         }
 
-        // TODO:  GetInvalidPathChars()
-        string saveFilePath = SaveLocation(chunkData.worldPosition);
+        string saveFilePath = GetSaveFilePath(chunkData.worldPosition);
         
         try
         {
@@ -46,11 +47,12 @@ public static class Serialization
     
     public static bool LoadChunk(ref Chunk.ChunkData chunkData)
     {
-        string saveFilePath = SaveLocation(chunkData.worldPosition);
+        string saveFilePath = GetSaveFilePath(chunkData.worldPosition);
 
         if (!File.Exists(saveFilePath))
         {
-            return true; // Nothing has been saved, so nothing to load
+            // Nothing has been saved, so nothing to load
+            return true;
         }
 
         SavedChunk savedChunk;

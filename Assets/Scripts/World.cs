@@ -257,6 +257,8 @@ public class World : SingletonMonoBehaviour<World>
             Random.Range(-SeedRandomRange, SeedRandomRange), 
             Random.Range(-SeedRandomRange, SeedRandomRange)
         );
+
+        // get_persistentDataPath can only be called from the main thread, so we cache it here.
         persistentDataPath = Application.persistentDataPath;
     }
 
