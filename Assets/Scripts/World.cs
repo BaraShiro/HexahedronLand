@@ -232,6 +232,9 @@ public class World : SingletonMonoBehaviour<World>
     [SerializeField, Range(1, 50)] private int drawRange = 8; // TODO: Make world setting
     [SerializeField] private Chunk chunkPrefab;
     [SerializeField] private PlayerController playerPrefab;
+    [SerializeField] private Transform loadingCamera;
+    [SerializeField] private Transform loadingCameraLookAt;
+    private readonly Vector3 loadingCameraOffset = new Vector3(0, 100, 0);
     private PlayerController player;
     private readonly float updateDelay = 2f;
     private float timeSinceLastUpdate = 0f;
@@ -277,9 +280,12 @@ public class World : SingletonMonoBehaviour<World>
 
     private void Start()
     {
+        loadingCameraLookAt.position = initialPoint;
+        loadingCamera.position = initialPoint + loadingCameraOffset;
+
         foreach (SurfaceBiomeGenerator generator in GetComponentsInChildren<SurfaceBiomeGenerator>())
         {
-            if (!string.IsNullOrEmpty(generator.biomeName)) // TODO: make extension
+            if (generator.biomeName.IsNotNullOrWhiteSpace())
             {
                 biomeGenerators.TryAdd(generator.biomeName, generator);
             }
@@ -328,15 +334,15 @@ public class World : SingletonMonoBehaviour<World>
 
     private void SpawnPlayer(object sender, EventArgs e)
     {
-        // TODO: find empty place as close to initial point as possible
-        if (Physics.Raycast(transform.position + new Vector3(0f, 150f, 0f), Vector3.down, out RaycastHit hit, Mathf.Infinity))
+        // Find empty space above initial point
+        Vector3 originOffset = new Vector3(0f, 10f, 0f);
+        RaycastHit hit;
+        while (!Physics.Raycast(initialPoint + originOffset, Vector3.down, out hit, Mathf.Infinity))
         {
-            player = Instantiate(playerPrefab, initialPoint + new Vector3(0, hit.point.y + 0.1f, 0), Quaternion.identity);
+            // If we miss we may be under the surface, so we move up
+            originOffset.y += 10f;
         }
-        else
-        {
-            player = Instantiate(playerPrefab, initialPoint, Quaternion.identity); // TODO: Handle this better
-        }
+        player = Instantiate(playerPrefab, hit.point, Quaternion.identity);
 
         OnWorldGenerationFinish -= SpawnPlayer;
     }
@@ -591,7 +597,7 @@ public class World : SingletonMonoBehaviour<World>
     {
         ChunkData containerChunkData = GetChunkDataFromBlockPosition(new Vector3Int(worldPositionX, worldPositionY, worldPositionZ));
 
-        if (containerChunkData != null)
+        if (containerChunkData is not null)
         {
             Block block = Chunk.GetBlock(
                 containerChunkData,
@@ -603,8 +609,6 @@ public class World : SingletonMonoBehaviour<World>
         }
         else
         {
-            // return BlockAir.Instance;
-            // Debug.Log($"Container chunk data is null");
             return new Block(Block.VoidBlockName);
         }
     }
