@@ -1451,7 +1451,7 @@ MonoBehaviour:
   playerPrefab: {fileID: 562673263641481526, guid: 087282f2e872007438e8aae6e86c0a2f, type: 3}
   loadingCamera: {fileID: 306319082}
   loadingCameraLookAt: {fileID: 560688868}
-  initialPoint: {x: 870, y: 0, z: 1893}
+  initialPoint: {x: 624, y: 0, z: -1696}
 --- !u!4 &1106805360
 Transform:
   m_ObjectHideFlags: 0
