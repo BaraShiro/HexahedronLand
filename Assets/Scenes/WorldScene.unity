@@ -1479,10 +1479,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1354878614}
     m_Modifications:
-    - target: {fileID: 8017436843608992889, guid: 4e7165bcc5848684f88aff7f74433d6c, type: 3}
-      propertyPath: blockType
-      value: 
-      objectReference: {fileID: 11400000, guid: c6f07d7ab8363ee4786994bf08c401f8, type: 2}
     - target: {fileID: 8017436844275133458, guid: 4e7165bcc5848684f88aff7f74433d6c, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -2364,18 +2360,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1354878614}
     m_Modifications:
-    - target: {fileID: 8017436843608992889, guid: a8b03ea88e968304fa41e56aecc7aed6, type: 3}
-      propertyPath: herbLayerDensity
-      value: 0.402
-      objectReference: {fileID: 0}
-    - target: {fileID: 8017436843608992889, guid: a8b03ea88e968304fa41e56aecc7aed6, type: 3}
-      propertyPath: treeLayerDensity
-      value: 0.234
-      objectReference: {fileID: 0}
-    - target: {fileID: 8017436843608992889, guid: a8b03ea88e968304fa41e56aecc7aed6, type: 3}
-      propertyPath: shrubLayerDensity
-      value: 0.238
-      objectReference: {fileID: 0}
     - target: {fileID: 8017436844275133458, guid: a8b03ea88e968304fa41e56aecc7aed6, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e193b2d188511a49b54019b39ee4742, type: 3}
+  m_Name: SubtropicalDesert
+  m_EditorClassIdentifier: 
+  blockTypeName: Sandstone
+  blockData:
+    northTexturePosition:
+      x: 6
+      y: 2
+    eastTexturePosition:
+      x: 6
+      y: 2
+    southTexturePosition:
+      x: 6
+      y: 2
+    westTexturePosition:
+      x: 6
+      y: 2
+    upTexturePosition:
+      x: 7
+      y: 2
+    downTexturePosition:
+      x: 3
+      y: 1
+    northIsSolid: 1
+    eastIsSolid: 1
+    southIsSolid: 1
+    westIsSolid: 1
+    upIsSolid: 1
+    downIsSolid: 1
+    hasCollision: 1
+    maxHealth: 1
+    replacementBlock: {fileID: 11400000, guid: e596d8ed2c16d054f81b0df5dc035c06, type: 2}
+    resource: 
+    resourceAmount: 0

@@ -45,8 +45,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   nextHandler: {fileID: 8017436843816505862}
-  blockType: {fileID: 11400000, guid: e596d8ed2c16d054f81b0df5dc035c06, type: 2}
-  layerThickness: 0
+  blockType: {fileID: 11400000, guid: 658ce5f2215cf7d4cb8b2e9baa80b198, type: 2}
+  layerThickness: 1
 --- !u!1 &8017436843608992894
 GameObject:
   m_ObjectHideFlags: 0

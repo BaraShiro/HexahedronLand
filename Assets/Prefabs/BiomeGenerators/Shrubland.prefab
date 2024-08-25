@@ -92,7 +92,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   nextHandler: {fileID: 8017436843883334635}
-  blockType: {fileID: 11400000, guid: 68ad6e2c93a748844ad5a6de166bbf3b, type: 2}
+  blockType: {fileID: 11400000, guid: b8befe0a5e0940b42a563b2ff310d991, type: 2}
   surfaceNoiseSettings: {fileID: 11400000, guid: 07cb0342d83c224499b654ed1d55a34e, type: 2}
   surfaceBiomeGenerator: {fileID: 8017436844275133676}
   treeLayerDensity: 0.05

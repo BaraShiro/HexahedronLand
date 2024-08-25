@@ -92,7 +92,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   nextHandler: {fileID: 8017436843883334635}
-  blockType: {fileID: 11400000, guid: 6074de33554725940831cd6a05871070, type: 2}
+  blockType: {fileID: 11400000, guid: ad86e6595f5e73a4cafd69b1d4afe86f, type: 2}
   surfaceNoiseSettings: {fileID: 11400000, guid: 6adcd4dfa9786c549b1407ee43599924, type: 2}
   surfaceBiomeGenerator: {fileID: 8017436844275133676}
   treeLayerDensity: 0
@@ -143,7 +143,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   nextHandler: {fileID: 8017436843608992889}
-  blockType: {fileID: 11400000, guid: 6074de33554725940831cd6a05871070, type: 2}
+  blockType: {fileID: 11400000, guid: e5809b7fc6d2380469dd5fd3fc859f38, type: 2}
 --- !u!1 &8017436843883334632
 GameObject:
   m_ObjectHideFlags: 0
